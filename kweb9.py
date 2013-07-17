@@ -112,10 +112,10 @@ samples/
     1 liner - simplest kweb module
 
   * txthello
-    2 liner - simplest text/plain response
+    2 liner - response Content-Type
 
   * auth
-    HTTP Basic Authentication example
+    HTTP Basic Authentication
 
   * redirect
     redirect html template - use in POST requests
@@ -124,7 +124,7 @@ samples/
     set/get cookies
 
   * listdir
-    list directories from a different path of filesystem
+    list directory from a different path of filesystem
 
 
   form
@@ -2149,7 +2149,7 @@ Copyright &copy; 2013 &nbsp;<a href="http://www.houseofkodai.in">houseofkodai</a
         if ('.kweb' == name[-5:]): name = name[:-5]
         div.append('<tr><td align="right">%s</td><td><a href="%s%s">%s%s</a></td><td>%s</td></tr>'%
           (i[2], uq(name), lnksuffix[i[3]], htmlescape(name), suffix[i[3]], time.strftime('%d %b %Y', time.localtime(i[1]))))
-      div.append('</table>\n</div>')
+      div.append('</table>')
       return '\n'.join(div)
     elif 0 == rtype:
       return tuple(flist)
@@ -2180,6 +2180,7 @@ Copyright &copy; 2013 &nbsp;<a href="http://www.houseofkodai.in">houseofkodai</a
     if urlpath[-1] != '/': div.append('<base href="%s/" />'%urlpath)
     div.append(bread_crumb(urlpath, self.host))
     div.append(self.dirlist(dirpath, -2))
+    div.append('</div>')
     return '\n'.join(div)
 
   def GET(self, R):
