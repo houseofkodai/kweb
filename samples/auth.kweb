@@ -1,0 +1,10 @@
+def GET(R):
+  '''
+  note: basic auth invalidation by adding user to url
+  '''
+  if (R.auth is None) or (R.auth[0] != R.auth[1]):
+    R.addResponseHeader('WWW-Authenticate: Basic realm="kweb9"')
+    return R.sendError(401)
+  else:
+    url = 'http://logout@%s%s/' % (R.host, R.line[1])
+    return R.html('hello %s (%s) <a href="%s">Logout</a>'%(R.auth[0], R.auth[1], url))
