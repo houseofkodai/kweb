@@ -1,0 +1,54 @@
+from Cookie import BaseCookie
+import datetime
+
+def GET(R):
+  '''
+  http://en.wikipedia.org/wiki/HTTP_cookie
+  http://pymotw.com/2/Cookie/index.html
+
+  cookie attributes:
+    domain
+    path
+    expiration time or maximum age
+    Secure flag
+    HttpOnly flag
+  '''
+  cookie = BaseCookie()
+  if R.modparts:
+    cmd = R.modparts[0]
+  else:
+    cmd = 'add'
+  if 'del' == cmd:
+    for k in ('encoded_value_cookie', 'restricted_cookie', 'with_max_age', 'expires_at_time'):
+      cookie[k] = 'deleted'
+      cookie[k]['path'] = '/'
+      cookie[k]['expires'] = 'Thu, 01 Jan 1970 00:00:00 GMT'
+  elif 'add' == cmd:
+    cookie['encoded_value_cookie'] = '"cookie_value"'
+    cookie['encoded_value_cookie']['comment'] = 'Notice that this cookie value has escaped quotes'
+    # A cookie that only applies to part of a site
+    cookie['restricted_cookie'] = 'cookie_value'
+    cookie['restricted_cookie']['path'] = '/sub/path'
+    cookie['restricted_cookie']['domain'] = 'PyMOTW'
+    cookie['restricted_cookie']['secure'] = True
+    # A cookie that expires in 5 minutes
+    cookie['with_max_age'] = 'expires in 5 minutes'
+    cookie['with_max_age']['max-age'] = 300 # seconds
+    # A cookie that expires at a specific time
+    cookie['expires_at_time'] = 'cookie_value'
+    expires = datetime.datetime(2009, 2, 14, 18, 30, 14) + datetime.timedelta(hours=1)
+    cookie['expires_at_time']['expires'] = expires.strftime('%a, %d %b %Y %H:%M:%S') # Wdy, DD-Mon-YY HH:MM:SS GMT
+  R.addResponseHeader(cookie.output())
+
+  a = ['']
+  for c in R.headers.get('cookie', []):
+    cookie.load(c)
+    for key, morsel in cookie.iteritems():
+      a.append('key = %s'%morsel.key)
+      a.append('  value = %s'%morsel.value)
+      a.append('  coded_value = %s'%morsel.coded_value)
+      for name in morsel.keys():
+        if morsel[name]: a.append('  %s = %s' % (name, morsel[name]))
+    a.append('')
+  R.setResponseType()
+  return '\n'.join(a)
