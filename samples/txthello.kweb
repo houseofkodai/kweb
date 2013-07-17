@@ -1,0 +1,3 @@
+def GET(R):
+  R.setResponseType('text/plain')
+  return 'hello kweb ;-)'
