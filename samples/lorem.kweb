@@ -1,0 +1,127 @@
+def GET(R):
+  headend = '''<style type='text/css'>
+.content {max-width:45em;}
+</style>\
+'''
+  body = '''
+<nav class="font-sans">
+ <ul>
+  <li><a href="#1">One</a></li>
+  <li><a href="#2" class="active">Two</a></li>
+  <li><a href="#3">Three</a></li>
+  <span class="push-right">
+  <li><a href="#4"><strong>userid</strong></a></li>
+  <li><input type="button" value="Settings"/></li>
+  <li><button>Logout</button></li>
+  &nbsp;
+  </span>
+ </ul>
+</nav>
+<div style="margin-top:-.5em;" class="font-sans">
+<a href="#">onedru</a> | <a href="#">erandu</a> | <a href="#">moondru</a>
+</div>
+
+<h1>Nam quibus rebus efficiuntur voluptates, eae non sunt in potestate sapientis.</h1>
+
+<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Illud dico, ea, quae dicat, praeclare inter se cohaerere. Videsne quam sit magna dissensio? Scisse enim te quis coarguere possit? Duo Reges: constructio interrete. <code>Urgent tamen et nihil remittunt.</code> Neque enim disputari sine reprehensione nec cum iracundia aut pertinacia recte disputari potest. Servari enim iustitia nisi a forti viro, nisi a sapiente non potest. Superiores tres erant, quae esse possent, quarum est una sola defensa, eaque vehementer. <i>Idem iste, inquam, de voluptate quid sentit?</i> </p>
+
+<p>Non quam nostram quidem, inquit Pomponius iocans; Ego vero volo in virtute vim esse quam maximam; Tum ille timide vel potius verecunde: Facio, inquit. <mark>Cur haec eadem Democritus?</mark> Plane idem, inquit, et maxima quidem, qua fieri nulla maior potest. Quid enim tanto opus est instrumento in optimis artibus comparandis? Bona autem corporis huic sunt, quod posterius posui, similiora. </p>
+
+<ol>
+  <li>Non igitur bene.</li>
+	<li>Transfer idem ad modestiam vel temperantiam, quae est moderatio cupiditatum rationi oboediens.</li>
+	<li>Ipse Epicurus fortasse redderet, ut Sextus Peducaeus, Sex.</li>
+	<li>Illa argumenta propria videamus, cur omnia sint paria peccata.</li>
+</ol>
+
+
+<pre>
+Nec enim figura corporis nec ratio excellens ingenii humani
+significat ad unam hanc rem natum hominem, ut frueretur
+voluptatibus.
+
+Tantum dico, magis fuisse vestrum agere Epicuri diem
+natalem, quam illius testamento cavere ut ageretur.
+</pre>
+
+
+<p>Quae quidem sapientes sequuntur duce natura tamquam videntes; Quam illa ardentis amores excitaret sui! Cur tandem? Tum Quintus: Est plane, Piso, ut dicis, inquit. <i>Sit enim idem caecus, debilis.</i> <mark>Sedulo, inquam, faciam.</mark> Cum id fugiunt, re eadem defendunt, quae Peripatetici, verba. Idem iste, inquam, de voluptate quid sentit? Ac tamen hic mallet non dolere. <mark>Inquit, dasne adolescenti veniam?</mark> Nihil ad rem! Ne sit sane; <i>Ita prorsus, inquam;</i> </p>
+
+<h3>Equidem etiam Epicurum, in physicis quidem, Democriteum puto.</h3>
+
+<p>Nihil opus est exemplis hoc facere longius. Confecta res esset. Verum hoc idem saepe faciamus. Maximas vero virtutes iacere omnis necesse est voluptate dominante. Quibusnam praeteritis? His enim rebus detractis negat se reperire in asotorum vita quod reprehendat. Ait enim se, si uratur, Quam hoc suave! dicturum. Hoc loco tenere se Triarius non potuit. </p>
+
+<p>Quamquam id quidem, infinitum est in hac urbe; Atqui eorum nihil est eius generis, ut sit in fine atque extrerno bonorum. Universa enim illorum ratione cum tota vestra confligendum puto. Illa tamen simplicia, vestra versuta. Aliter homines, aliter philosophos loqui putas oportere? Aliter enim nosmet ipsos nosse non possumus. Hoc mihi cum tuo fratre convenit. At ego quem huic anteponam non audeo dicere; </p>
+
+<h2>Non igitur de improbo, sed de callido improbo quaerimus, qualis Q.</h2>
+
+<p>Sin te auctoritas commovebat, nobisne omnibus et Platoni ipsi nescio quem illum anteponebas? Claudii libidini, qui tum erat summo ne imperio, dederetur. Virtutis, magnitudinis animi, patientiae, fortitudinis fomentis dolor mitigari solet. Qui ita affectus, beatum esse numquam probabis; Stulti autem malorum memoria torquentur, sapientes bona praeterita grata recordatione renovata delectant. Deinde prima illa, quae in congressu solemus: Quid tu, inquit, huc? </p>
+
+<dl>
+	<dt><dfn>Explanetur igitur.</dfn></dt>
+	<dd>Qui-vere falsone, quaerere mittimus-dicitur oculis se privasse;</dd>
+	<dt><dfn>Recte dicis;</dfn></dt>
+	<dd>Quis suae urbis conservatorem Codrum, quis Erechthei filias non maxime laudat?</dd>
+	<dt><dfn>Poterat autem inpune;</dfn></dt>
+	<dd>Tu vero, inquam, ducas licet, si sequetur;</dd>
+	<dt><dfn>Confecta res esset.</dfn></dt>
+	<dd>Hoc dictum in una re latissime patet, ut in omnibus factis re, non teste moveamur.</dd>
+	<dt><dfn>Quis istud, quaeso, nesciebat?</dfn></dt>
+	<dd>Quis enim potest istis, quae te, ut ais, delectant, brevibus et acutis auditis de sententia decedere?</dd>
+	<dt><dfn>Beatum, inquit.</dfn></dt>
+	<dd>Hoc est dicere: Non reprehenderem asotos, si non essent asoti.</dd>
+</dl>
+
+<p>Nihil opus est exemplis hoc facere longius. Confecta res esset. Verum hoc idem saepe faciamus. Maximas vero virtutes iacere omnis necesse est voluptate dominante. Quibusnam praeteritis? His enim rebus detractis negat se reperire in asotorum vita quod reprehendat. Ait enim se, si uratur, Quam hoc suave! dicturum. Hoc loco tenere se Triarius non potuit. </p>
+
+<ul>
+	<li>Quodsi ipsam honestatem undique pertectam atque absolutam.</li>
+	<li>Propter nos enim illam, non propter eam nosmet ipsos diligimus.</li>
+  <ul>
+    <li>Non igitur bene.</li>
+    <li>Transfer idem ad modestiam vel temperantiam, quae est moderatio cupiditatum rationi oboediens.</li>
+    <li>Ipse Epicurus fortasse redderet, ut Sextus Peducaeus, Sex.</li>
+  </ul>
+	<li>Quam illa ardentis amores excitaret sui! Cur tandem?</li>
+	<li>Multa sunt dicta ab antiquis de contemnendis ac despiciendis rebus humanis;</li>
+</ul>
+
+
+<blockquote cite='http://loripsum.net'>
+	Praeclare enim Plato: Beatum, cui etiam in senectute contigerit, ut sapientiam verasque opiniones assequi possit.
+</blockquote>
+
+<table summary="Table summary">
+<caption>Table Caption</caption>
+<thead>
+<tr>
+ <th>Header</th><th>Header</th><th>Header</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+ <td>Content</td><td>1</td><td>a</td>
+</tr>
+<tr>
+ <td>Content</td><td>2</td><td>b</td>
+</tr>
+<tr>
+ <td>Content</td><td>3</td><td>c</td>
+</tr>
+<tr>
+ <td>Content</td><td>4</td><td>d</td>
+</tr>
+<tr>
+ <td>Content</td><td>5</td><td>e</td>
+</tr>
+<tr>
+ <td>c1</td><td>c2 is bigger than c1</td><td>the quick brown fox jumped over the lazy dog.</td>
+</tr>
+</tbody>
+</table>
+
+<p>Cur post Tarentum ad Archytam? Quantum Aristoxeni ingenium consumptum videmus in musicis? Videsne quam sit magna dissensio? Idemne, quod iucunde? Illa sunt similia: hebes acies est cuipiam oculorum, corpore alius senescit; <code>Quid autem habent admirationis, cum prope accesseris?</code> <mark>Si quae forte-possumus.</mark> Quid ad utilitatem tantae pecuniae? Unum nescio, quo modo possit, si luxuriosus sit, finitas cupiditates habere. Unum nescio, quo modo possit, si luxuriosus sit, finitas cupiditates habere. </p>
+
+<address>Author text</address>
+'''
+  return R.html(body, '(-: html5 template :-)', headend)
