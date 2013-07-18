@@ -7,7 +7,12 @@ kweb:
 why:
 =====
   * make simple things easy, and complicated things possible.
-  * download/run/use
+    1. [download kweb9.py](https:github.com/houseofkodai/kweb/blob/master/kweb9.py)
+    2. run:
+ ```
+python kweb9.py
+```
+    3. open URL http://localhost:8010/ from browser
 
 
 features:
