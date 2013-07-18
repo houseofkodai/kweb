@@ -124,3 +124,7 @@ samples/
   * listdir
     list directories from a different path of filesystem
 
+  * lorem
+    html5 template with common tags
+
+
