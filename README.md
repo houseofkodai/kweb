@@ -1,6 +1,6 @@
 kweb:
 =====
-  * Fast/simple/*single-file* python web-framework/HTTP-server.
+  * Fast, simple, *single-file* python2 web-framework/HTTP-server.
   * outcome of several years of thoughts/experiments/experience.
 
 
