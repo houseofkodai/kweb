@@ -107,30 +107,30 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 samples/
 ========
-* hello
+* [hello.kweb](https://github.com/houseofkodai/kweb/blob/master/samples/hello.kweb)
 
   1 liner - simplest kweb module
 
-* txthello
+* [lorem](https://github.com/houseofkodai/kweb/blob/master/samples/lorem.kweb)
+
+  html5 template with common tags
+
+* [txthello](https://github.com/houseofkodai/kweb/blob/master/samples/txthello.kweb)
 
   2 liner - simplest text/plain response
 
-* auth
+* [auth](https://github.com/houseofkodai/kweb/blob/master/samples/auth.kweb)
 
   HTTP Basic Authentication example
 
-* redirect
+* [redirect](https://github.com/houseofkodai/kweb/blob/master/samples/redirect.kweb)
 
   redirect html template - use in POST requests
 
-* cookie
+* [cookie](https://github.com/houseofkodai/kweb/blob/master/samples/cookie.kweb)
 
   set/get cookies
 
-* listdir
+* [listdir](https://github.com/houseofkodai/kweb/blob/master/samples/listdir.kweb)
 
   list directories from a different path of filesystem
-
-* lorem
-
-  html5 template with common tags
