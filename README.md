@@ -1,11 +1,11 @@
 kweb:
 =====
-  * Asynchronous single-file python web-framework/HTTP-server;
-  * outcome of several years of thoughts/experiments/experience
+  * Fast/simple/*single-file* python web-framework/HTTP-server.
+  * outcome of several years of thoughts/experiments/experience.
 
 
 why:
-=====
+====
   * make simple things easy, and complicated things possible.
     1. [download kweb9.py](https://raw.github.com/houseofkodai/kweb/master/kweb9.py)
     2. run:
