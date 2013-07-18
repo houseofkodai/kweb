@@ -3330,8 +3330,7 @@ def _kdaemonize(run, runparams):
     signal.signal(signal.SIGHUP, _onsignal)
     run(runparams)
   except:
-    try: file('/tmp/kweb7.dbg', 'a').write(traceback.format_exc())
-    except: pass
+    pass
 
 if __name__=="__main__":
   usage = "usage: %prog -a<address=0.0.0.0> -p<port 8010> -r<requestdir .> -o<timeout=10> -l<loglevel=2> <catchall.kweb>"
