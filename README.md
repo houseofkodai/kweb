@@ -56,9 +56,10 @@ FAQ:
 ====
 1. hello.kweb
 
-        def GET(REQUEST):
-          return 'hello kweb :-)'
-
+```python
+def GET(REQUEST):
+  return 'hello kweb :-)'
+```
 
 2. what do I need to know to develop web-applications using kweb ?
 
@@ -106,25 +107,30 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 samples/
 ========
-  * hello
-    1 liner - simplest kweb module
+* hello
 
-  * txthello
-    2 liner - simplest text/plain response
+  1 liner - simplest kweb module
 
-  * auth
-    HTTP Basic Authentication example
+* txthello
 
-  * redirect
-    redirect html template - use in POST requests
+  2 liner - simplest text/plain response
 
-  * cookie
-    set/get cookies
+* auth
 
-  * listdir
-    list directories from a different path of filesystem
+  HTTP Basic Authentication example
 
-  * lorem
-    html5 template with common tags
+* redirect
 
+  redirect html template - use in POST requests
 
+* cookie
+
+  set/get cookies
+
+* listdir
+
+  list directories from a different path of filesystem
+
+* lorem
+
+  html5 template with common tags
