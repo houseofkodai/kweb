@@ -160,6 +160,7 @@ pndng:
   * ontimer/onclose events for handler - persistent connection
 
 history:
+  30 Jul 2013: added html_ methods to _kweb
   17 Jul 2013: rewrite of _KRequest/_KHTTPClient class to make code more readable
   15 Jul 2013: sendRedirect bug fix
   11 Jul 2013: removed css from html to /kweb.css and
@@ -208,7 +209,7 @@ except:
 # GLOBAL CONSTANTS
 # ##################################################################################################
 _KWEB_VERSION = 9
-_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.JUL.17 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
+_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.JUL.30 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
 
 #common mime-types - add/edit as required
 _KEXTENSIONS_MAP = mimetypes.types_map.copy()
@@ -2675,6 +2676,9 @@ class _Ktxtbl(object):
 # ##################################################################################################
 
 class _kweb(object):
+  '''
+  holder class for common methods
+  '''
   def __init__ (self):
     self.KeyValueFile = _KeyValueFile
     self.Txtbl = _Ktxtbl
@@ -2820,6 +2824,129 @@ class _kweb(object):
       if emailid[i] in asciinotallowed: return local, domain
       i += 1
     return local, emailid[len(local)+1:]
+
+  def html_input(self, name='html_input', type=None, value=None, label=None):
+    if label:
+      el = ['<label for="%s">%s</label><input name="%s" id="%s"'%(name, label, name, name)]
+    else:
+      el = ['<input name="%s"'%(name)]
+    if type: el.append(' type="%s"'%type)
+    if value: el.append(' value="%s"'%value)
+    el.append(' />')
+    return ''.join(el)
+
+  def html_textarea(self, name='html_textarea', value=None, label=None, args=''):
+    if label:
+      el = ['<label for="%s">%s</label><textarea name="%s" id="%s" %s>'%(name, label, name, name, args)]
+    else:
+      el = ['<textarea name="%s" %s>'%(name, args)]
+    if value: el.append(value)
+    el.append('</textarea>')
+    return ''.join(el)
+
+  def html_select(self, name='html_select', value=None, label=None, items=None):
+    if not items: return ''
+    if label:
+      el = ['<label for="%s">%s</label><select name="%s" id="%s">'%(name, label, name, name)]
+    else:
+      el = ['<select name="%s">'%(name)]
+    if (type(items[0]) == type(())):
+      for i in items:
+        if i[0] == value:
+          el.append('<option value="%s" selected>%s</option>' % (i[0], i[1]))
+        else:
+          el.append('<option value="%s">%s</option>' % (i[0], i[1]))
+    else:
+      for i in items:
+        if i == value:
+          el.append('<option selected>%s</option>' % (i))
+        else:
+          el.append('<option>%s</option>' % (i))
+    el.append('</select>')
+    return ''.join(el)
+
+  def html_radio_list(self, name='html_radio_list', value=None, label=None, items=None):
+    if not items: return ''
+    if label:
+      a = ['<fieldset id="%s"><legend>%s</legend>'%(name, label)]
+    else:
+      a = ['<fieldset>']
+    if (type(items[0]) == type(())):
+      for i in items:
+        if i[0] == value: c = 'checked'
+        else: c = ''
+        a.append('<input type=radio name="%s" id="%s-%s" value="%s" %s/><label for="%s-%s">%s</label>' % (name, name, i[0], i[0], c, name, i[0], i[1]))
+    else:
+      for i in slist:
+        if i == value: c = 'checked'
+        else: c = ''
+        a.append('<input type=radio name="%s" id="%s-%s" value="%s" %s/><label for="%s-%s">%s</label>' % (name, name, i, i, c, name, i, i))
+    a.append('</fieldset>')
+    return ''.join(a)
+
+  def html_form(self, action='#', fieldsets=(), fieldvalues={}, fielderrors={}, method="POST", enctype='multipart/form-data', attrs=''):
+    '''
+      html form generation
+        * the last few years experience shows that html/tag generation templating is a mugs game
+          only adds a new layer of complexity (additional thing to learn on top of html
+        * current approach is to use long strings (simple, easy-to-understand/maintain, no-additional overhead)
+        * however, methods to aid in html-form generation is quite useful as they provide a
+        * consistent way to communicate data-structures
+        * does not add class/additional attributes to form-elements
+          better to set class attribute to form element and define it in css
+          or use a enclosing div for that
+        * sets' field-names and id to be the same - not convinced about use-case for different name/id
+
+      args:
+             action: form action
+          fieldsets: tuple of fieldsets
+                     fieldset: tuple of fields
+                               field: (type, name, label, args)
+                                        type: (1:text, 2:submit, 3:password, 4:checkbox, 5:radio, 6:select, 7:textarea)
+                                        name: field name
+                                       label: field label
+                                       args: list of name/value pairs for select/radio or element attributes for textarea
+        fieldvalues: dictionary of field-name and field-value
+        fielderrors: dictionary of field-name and field-errors - which gets added below field element
+             method: form submit method
+            enctype: encoding type (application/x-www-form-urlencoded or multipart/form-data)
+              attrs: form element attributes ex. id="frmX"
+
+      returns:
+        string: html form
+    '''
+    def _fieldset(legend='', fields=(), fieldvalues={}, fielderrors={}):
+      if legend:
+        a = ['<fieldset><legend>%s</legend>'%(legend)]
+      else:
+        a = []
+      for f in fields:
+        nf = len(f)
+        if (not f) or (nf < 1): continue
+        if 1 == f[0]:
+          a.append(html_input(f[1], None, fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
+        if 2 == f[0]:
+          a.append(html_input(f[1], 'submit', fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
+        if 3 == f[0]:
+          a.append(html_input(f[1], 'password', fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
+        if 4 == f[0]:
+          a.append(html_input(f[1], 'checkbox', fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
+        if 5 == f[0]:
+          a.append(html_radio_list(f[1], fieldvalues.get(f[1]), (f[2] if (nf>2) else None), (f[3] if (nf>3) else ())))
+        if 6 == f[0]:
+          a.append(html_select(f[1], fieldvalues.get(f[1]), (f[2] if (nf>2) else None), (f[3] if (nf>3) else ())))
+        if 7 == f[0]:
+          a.append(html_textarea(f[1], fieldvalues.get(f[1]), (f[2] if (nf>2) else None), (f[3] if (nf>3) else '')))
+      if legend: a.append('</fieldset>')
+      return '\n'.join(a)
+    a = ['<form action="%s" method="%s" enctype="%s" %s>'%(action, method, enctype, attrs)]
+    for fs in fieldsets:
+      if (type(fs[0]) == type('')):
+        a.append(_fieldset(fs[0], fs[1:], fieldvalues, fielderrors))
+      else:
+        a.append(_fieldset('', fs, fieldvalues, fielderrors))
+    a.append('</form>')
+    return ''.join(a)
 
 _KWEB = _kweb()
 
