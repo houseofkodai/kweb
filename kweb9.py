@@ -160,7 +160,9 @@ pndng:
   * ontimer/onclose events for handler - persistent connection
 
 history:
-  31 Jul 2013: bugfix in _kweb.html_ methods
+  31 Jul 2013: removed getquery - merged R.form with R.args
+               changed return format of REQUEST.args/form parse_query/parse_formdata [(name,value,), (name,value,),...]
+               bugfix in _kweb.html_ methods
   30 Jul 2013: added html_ methods to _kweb
   17 Jul 2013: rewrite of _KRequest/_KHTTPClient class to make code more readable
   15 Jul 2013: sendRedirect bug fix
@@ -1130,8 +1132,6 @@ REQUEST-methods
   None, 'str', ()
  getheader(key, default='')
   'str'
- getquery(key, default='')
-  'str'
  html(body='<p>arigato gozaimasu</p>', title='(-: kweb9 :-)', headend='', footer=None)
   'str'
  htmlescape(s)
@@ -1140,8 +1140,8 @@ REQUEST-methods
   'err', ['part',]
  parse_header_value(line)
   'content-type', {options}
- parse_query(qs, result={})
-  {'str':[],}
+ parse_query(qs, result=[])
+  [(name,value), (name,value),...]
  sendError(errcode=404, errreason=None, errmessage='')
   False
  sendFile(fname='')
@@ -1178,11 +1178,10 @@ module properties
     self.method = None
     self.url = None
     self.urlpath = None
-    self.args = None
+    self.args = []
     self.headers = {}
     self.content_length = 0
     self.data = None #content size:content_lenth that starts after request header
-    self.form = None
     self.pathparts = ()
     self.modparts = ()
     self.host = 'localhost'
@@ -1262,11 +1261,10 @@ module properties
     self.method = None
     self.url = None
     self.urlpath = None
-    self.args = None
+    self.args = []
     self.headers = {}
     self.content_length = 0
     self.data = None #content size:content_lenth
-    self.form = None
     self.pathparts = self.modparts = ()
     self.host = 'localhost'
     self.hostdir = self.moduledir = self.server.requestdir
@@ -1445,7 +1443,7 @@ module properties
           (self.content_length > self.MAXBODYSIZE)):
         return self.sendError(411, 'content_length > MAXBODYSIZE')
 
-      self.args = self.parse_query(url[4], {})
+      self.parse_query(url[4], self.args)
       self.session = self.server.gethost(host)[2]
       auth = self.headers.get("authorization")
       if auth is not None:
@@ -1479,8 +1477,9 @@ module properties
         boundary = v.get('boundary')
         if not boundary:
           return self.sendError(400, 'no boundary')
-        err, self.form = self.parse_formdata(body, boundary)
+        err, parts = self.parse_formdata(body, boundary)
         if err: return self.sendError(400, err)
+        self.args.extend(parts)
       else:
         #messed-up if request has query-string-params and form as urlencoded - but we deal with it ;-)
         self.parse_query(body.read(), self.args)
@@ -1505,7 +1504,7 @@ module properties
 
     return self.sendError() #default is 404 Not found ;-)
 
-  def parse_query(self, qs, result={}):
+  def parse_query(self, qs, result=[]):
     '''
     parse a HTTP query into a dictionary of arrays
 
@@ -1513,7 +1512,7 @@ module properties
       qs: query-string
 
     returns:
-      {key:[value,value2,...]}
+      [(name,value), (name,value),...]
 
     notes:
       * modifies the passed-dictionary, so that
@@ -1528,7 +1527,7 @@ module properties
       name = urllib.unquote(nv[0].replace('+', ' '))
       if (len(nv) == 2): value = urllib.unquote(nv[1].replace('+', ' '))
       else: value = ''
-      result.setdefault(name, []).append(value)
+      result.append((name, value))
     return result
 
   def parse_header(self, s):
@@ -1607,7 +1606,7 @@ module properties
       * does not parse multipart/mixed within multipart/form-data
       * does not deal with content-transfer-encoding
     '''
-    parts = [] #(name, filename, clen, content, ctype, cencoding)
+    parts = [] #(name, content, filename, content_length, content_type, content_encoding)
     partbegin = '--' + boundary
     lastpart = partbegin + '--'
     boundaryln = fin.readline().strip()
@@ -1698,7 +1697,7 @@ module properties
         content[-1] = lastline[:-2]
       content = ''.join(content)
       #ignoring the parts for content-type and content-transfer-encoding
-      parts.append((name, filename, (clen-2), content, ctype[0], cencoding[0]))
+      parts.append((name, content, filename, (clen-2), ctype[0], cencoding[0]))
     return ('', parts)
 
   def _kall(self, method, mustkall=False):
@@ -2063,19 +2062,6 @@ Copyright &copy; 2013 &nbsp;<a href="http://www.houseofkodai.in">houseofkodai</a
       header field value or default
     '''
     return self.headers.get(key, [default])[0]
-
-  def getquery(self, key, default=''):
-    '''
-    get HTTP request query (query-string or urlencoded-body)
-
-    args:
-          key: query-string field name
-      default: default value if key does not exist
-
-    returns:
-      query-string/urlencoded-body field value or default
-    '''
-    return self.args.get(key, [default])[0]
 
   def htmlescape(self, s):
     '''
