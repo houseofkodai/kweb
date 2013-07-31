@@ -112,30 +112,34 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 samples/
 ========
-* [hello.kweb](https://github.com/houseofkodai/kweb/blob/master/samples/hello.kweb)
+1. [hello.kweb](https://github.com/houseofkodai/kweb/blob/master/samples/hello.kweb)
 
   1 liner - simplest kweb module
 
-* [lorem](https://github.com/houseofkodai/kweb/blob/master/samples/lorem.kweb)
+2. [lorem](https://github.com/houseofkodai/kweb/blob/master/samples/lorem.kweb)
 
   html5 template with common tags
 
-* [txthello](https://github.com/houseofkodai/kweb/blob/master/samples/txthello.kweb)
+3. [txthello](https://github.com/houseofkodai/kweb/blob/master/samples/txthello.kweb)
 
   2 liner - simplest text/plain response
 
-* [auth](https://github.com/houseofkodai/kweb/blob/master/samples/auth.kweb)
+4. [auth](https://github.com/houseofkodai/kweb/blob/master/samples/auth.kweb)
 
   HTTP Basic Authentication example
 
-* [redirect](https://github.com/houseofkodai/kweb/blob/master/samples/redirect.kweb)
+5. [redirect](https://github.com/houseofkodai/kweb/blob/master/samples/redirect.kweb)
 
   redirect html template - use in POST requests
 
-* [cookie](https://github.com/houseofkodai/kweb/blob/master/samples/cookie.kweb)
+6. [cookie](https://github.com/houseofkodai/kweb/blob/master/samples/cookie.kweb)
 
   set/get cookies
 
-* [listdir](https://github.com/houseofkodai/kweb/blob/master/samples/listdir.kweb)
+7. [listdir](https://github.com/houseofkodai/kweb/blob/master/samples/listdir.kweb)
 
   list directories from a different path of filesystem
+
+8. [form](https://github.com/houseofkodai/kweb/blob/master/samples/form.kweb)
+
+  form field processing, including file-upload
