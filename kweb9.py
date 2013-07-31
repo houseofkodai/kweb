@@ -160,6 +160,7 @@ pndng:
   * ontimer/onclose events for handler - persistent connection
 
 history:
+  31 Jul 2013: bugfix in _kweb.html_ methods
   30 Jul 2013: added html_ methods to _kweb
   17 Jul 2013: rewrite of _KRequest/_KHTTPClient class to make code more readable
   15 Jul 2013: sendRedirect bug fix
@@ -209,7 +210,7 @@ except:
 # GLOBAL CONSTANTS
 # ##################################################################################################
 _KWEB_VERSION = 9
-_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.JUL.30 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
+_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.JUL.31 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
 
 #common mime-types - add/edit as required
 _KEXTENSIONS_MAP = mimetypes.types_map.copy()
@@ -2831,7 +2832,11 @@ class _kweb(object):
     else:
       el = ['<input name="%s"'%(name)]
     if type: el.append(' type="%s"'%type)
-    if value: el.append(' value="%s"'%value)
+    if value:
+      if 'checkbox' == type:
+        el.append(' checked')
+      else:
+        el.append(' value="%s"'%value)
     el.append(' />')
     return ''.join(el)
 
@@ -2877,7 +2882,7 @@ class _kweb(object):
         else: c = ''
         a.append('<input type=radio name="%s" id="%s-%s" value="%s" %s/><label for="%s-%s">%s</label>' % (name, name, i[0], i[0], c, name, i[0], i[1]))
     else:
-      for i in slist:
+      for i in items:
         if i == value: c = 'checked'
         else: c = ''
         a.append('<input type=radio name="%s" id="%s-%s" value="%s" %s/><label for="%s-%s">%s</label>' % (name, name, i, i, c, name, i, i))
@@ -2902,7 +2907,7 @@ class _kweb(object):
           fieldsets: tuple of fieldsets
                      fieldset: tuple of fields
                                field: (type, name, label, args)
-                                        type: (1:text, 2:submit, 3:password, 4:checkbox, 5:radio, 6:select, 7:textarea)
+                                        type: (1:text, 2:submit, 3:password, 4:checkbox, 5:file, 6:radio, 7:select, 8:textarea)
                                         name: field name
                                        label: field label
                                        args: list of name/value pairs for select/radio or element attributes for textarea
@@ -2924,19 +2929,21 @@ class _kweb(object):
         nf = len(f)
         if (not f) or (nf < 1): continue
         if 1 == f[0]:
-          a.append(html_input(f[1], None, fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
+          a.append(self.html_input(f[1], None, fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
         if 2 == f[0]:
-          a.append(html_input(f[1], 'submit', fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
+          a.append(self.html_input(f[1], 'submit', fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
         if 3 == f[0]:
-          a.append(html_input(f[1], 'password', fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
+          a.append(self.html_input(f[1], 'password', fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
         if 4 == f[0]:
-          a.append(html_input(f[1], 'checkbox', fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
+          a.append(self.html_input(f[1], 'checkbox', fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
         if 5 == f[0]:
-          a.append(html_radio_list(f[1], fieldvalues.get(f[1]), (f[2] if (nf>2) else None), (f[3] if (nf>3) else ())))
+          a.append(self.html_input(f[1], 'file', fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
         if 6 == f[0]:
-          a.append(html_select(f[1], fieldvalues.get(f[1]), (f[2] if (nf>2) else None), (f[3] if (nf>3) else ())))
+          a.append(self.html_radio_list(f[1], fieldvalues.get(f[1]), (f[2] if (nf>2) else None), (f[3] if (nf>3) else ())))
         if 7 == f[0]:
-          a.append(html_textarea(f[1], fieldvalues.get(f[1]), (f[2] if (nf>2) else None), (f[3] if (nf>3) else '')))
+          a.append(self.html_select(f[1], fieldvalues.get(f[1]), (f[2] if (nf>2) else None), (f[3] if (nf>3) else ())))
+        if 8 == f[0]:
+          a.append(self.html_textarea(f[1], fieldvalues.get(f[1]), (f[2] if (nf>2) else None), (f[3] if (nf>3) else '')))
       if legend: a.append('</fieldset>')
       return '\n'.join(a)
     a = ['<form action="%s" method="%s" enctype="%s" %s>'%(action, method, enctype, attrs)]
