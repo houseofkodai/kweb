@@ -1,0 +1,47 @@
+def GET(R):
+  '''
+ fieldset: tuple of fields
+           field: (type, name, label, args)
+                   type: (1:text, 2:submit, 3:password, 4:checkbox, 5:file, 6:radio, 7:select, 8:textarea)
+  '''
+  css = '''
+<style type='text/css'>
+#frmSample label {display:block;}
+</style>'''
+  import kweb
+  fv = {'ftextarea':'hello kweb',
+        'ftext': 'ola',
+        'fselect': 'b',
+        'fselect2': '2',
+        'fcheckbox': True,
+        'fradio':'Radio3',
+        'fradio2':'2'}
+  fs = ('Field Set1',
+    (1, 'fName', 'Name:'),
+    (3, 'fPassword', 'Password:'),
+    (4, 'fcheckbox', 'Checkbox1'),
+    (4, 'fcheckbox2', 'Checkbox2'),
+    (5, 'ffile', 'File'),
+    (6, 'fradio', 'Radio Option', ('Radio1', 'Radio2', 'Radio3')),
+    (6, 'fradio2', 'Radio Option2', (('1', 'Radio1'), ('2','Radio2'), ('3','Radio3'))),
+    (7, 'fSelect', 'Select ABC:', ('c', 'a', 'b', 'c')),
+    (7, 'fselect2', 'Select A1B2C3:', (('1','a'), ('2','b'), ('3','c'))),
+    (8, 'ftextarea', 'Text Area:', 'rows="5" cols="40"'),
+  )
+  fs2 = (
+    (2, 'btnSubmit'),
+  )
+  body = kweb.html_form(action='#', fieldsets=(fs,fs2), fieldvalues=fv, fielderrors={}, method="POST", enctype='application/x-www-form-urlencoded', attrs='id="frmSample"')
+  #body = kweb.html_form(action='#', fieldsets=(fs,fs2), fieldvalues=fv, fielderrors={}, method="POST", enctype='multipart/form-data', attrs='id="frmSample"')
+  return R.html(body, headend=css)
+
+def POST(R):
+  #enctype='multipart/form-data'
+  #R.args = [(name, content, filename, content_length, content_type, content_encoding), ...]
+  #enctype='application/x-www-form-urlencoded'
+  #R.args = [(name,value), (name,value),...]
+  a = []
+  for i in R.args:
+    a.append('%d:%s:%s'%(len(i), i[0], i[1]))
+  a = '\n'.join(a)
+  return R.html('<pre>%s</pre>'%(a))
