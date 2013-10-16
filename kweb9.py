@@ -2,14 +2,19 @@
 '''
 kweb:
 =====
-  * Asynchronous single-file python web-framework/HTTP-server;
-  * outcome of several years of thoughts/experiments/experience
+  * Fast, simple, *single-file* python2 web-framework/HTTP-server.
+  * outcome of several years of thoughts/experiments/experience.
 
 
 why:
-=====
+====
   * make simple things easy, and complicated things possible.
-  * download/run/use
+    1. [download kweb9.py](https://raw.github.com/houseofkodai/kweb/master/kweb9.py)
+    2. run:
+ ```
+python kweb9.py
+```
+    3. open URL http://localhost:8010/ from local-browser or http://<ip-address>:8010/ from remote-browser
 
 
 features:
@@ -58,9 +63,10 @@ FAQ:
 ====
 1. hello.kweb
 
-        def GET(REQUEST):
-          return 'hello kweb :-)'
-
+```python
+def GET(REQUEST):
+  return 'hello kweb :-)'
+```
 
 2. what do I need to know to develop web-applications using kweb ?
 
@@ -108,26 +114,39 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 samples/
 ========
-  * hello
-    1 liner - simplest kweb module
+1. [hello.kweb](https://github.com/houseofkodai/kweb/blob/master/samples/hello.kweb)
 
-  * txthello
-    2 liner - response Content-Type
+  1 liner - simplest kweb module
 
-  * auth
-    HTTP Basic Authentication
+2. [lorem](https://github.com/houseofkodai/kweb/blob/master/samples/lorem.kweb)
 
-  * redirect
-    redirect html template - use in POST requests
+  html5 template with common tags
 
-  * cookie
-    set/get cookies
+3. [txthello](https://github.com/houseofkodai/kweb/blob/master/samples/txthello.kweb)
 
-  * listdir
-    list directory from a different path of filesystem
+  2 liner - simplest text/plain response
+
+4. [auth](https://github.com/houseofkodai/kweb/blob/master/samples/auth.kweb)
+
+  HTTP Basic Authentication example
+
+5. [redirect](https://github.com/houseofkodai/kweb/blob/master/samples/redirect.kweb)
+
+  redirect html template - use in POST requests
+
+6. [cookie](https://github.com/houseofkodai/kweb/blob/master/samples/cookie.kweb)
+
+  set/get cookies
+
+7. [listdir](https://github.com/houseofkodai/kweb/blob/master/samples/listdir.kweb)
+
+  list directories from a different path of filesystem
+
+8. [form](https://github.com/houseofkodai/kweb/blob/master/samples/form.kweb)
+
+  form field processing, including file-upload
 
 
-  form
   session
   rest
   api
@@ -160,6 +179,10 @@ pndng:
   * ontimer/onclose events for handler - persistent connection
 
 history:
+  16 Oct 2013: renamed _KRequest.data to _KRequest.content
+               renamed _KRequest.server property to _server
+               renamed _KRequest.parse_header to _parse_header
+               modified _KRequest._parseBody to reset content - seek(0)
   31 Jul 2013: removed getquery - merged R.form with R.args
                changed return format of REQUEST.args/form parse_query/parse_formdata [(name,value,), (name,value,),...]
                bugfix in _kweb.html_ methods
@@ -212,7 +235,7 @@ except:
 # GLOBAL CONSTANTS
 # ##################################################################################################
 _KWEB_VERSION = 9
-_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.JUL.31 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
+_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.OCT.16 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
 
 #common mime-types - add/edit as required
 _KEXTENSIONS_MAP = mimetypes.types_map.copy()
@@ -1104,12 +1127,13 @@ REQUEST-properties
  args {'str':'str',}
  auth (username, password)
  clientaddr (ipaddress, portnumber)
- data 'str'
- form {'str':'str',}
+ content None or tempfile.TemporaryFile()
+ content_length 'int'
  headers {'str':[],}
  host 'str'
  hostdir 'str'
  line (method, request-URI, HTTP-Version)
+ method 'str'
  modparts ('str',)
  moduledir 'str'
  pathparts ('str',)
@@ -1173,7 +1197,7 @@ module properties
     self.version = _KWEB_VERSION
     self.remoteip = clientaddr[0]
     self.clientaddr = clientaddr
-    self.server = server
+    self._server = server
     self.line = None
     self.method = None
     self.url = None
@@ -1181,7 +1205,7 @@ module properties
     self.args = []
     self.headers = {}
     self.content_length = 0
-    self.data = None #content size:content_lenth that starts after request header
+    self.content = None #content size:content_lenth that starts after request header
     self.pathparts = ()
     self.modparts = ()
     self.host = 'localhost'
@@ -1230,7 +1254,7 @@ module properties
     if not os.path.isfile(modfname):
       modfname = os.path.join(self.hostdir, name+'.kweb')
     if not os.path.isfile(modfname):
-      modfname = os.path.join(self.server.requestdir, name+'.kweb')
+      modfname = os.path.join(self._server.requestdir, name+'.kweb')
     if not os.path.isfile(modfname):
       return self.sendError(500, 'import module "%s" does not exist'%name)
     (err, mod) = _kimport(modfname)
@@ -1245,6 +1269,8 @@ module properties
       #use GET method if HEAD is not available
       if (method is None) and ('HEAD' == self.method):
         method = getattr(mod, 'GET', None)
+      #should actually send a 405 Method Not Allowed instead of 500
+      #maybe needs to send error code in response ?!
       if not callable(method):
         return ('invalid %s in %s'%(self.method, fname), None)
       self.TIMEOUT = getattr(mod, 'TIMEOUT', self.TIMEOUT)
@@ -1264,10 +1290,10 @@ module properties
     self.args = []
     self.headers = {}
     self.content_length = 0
-    self.data = None #content size:content_lenth
+    self.content = None #content size:content_lenth
     self.pathparts = self.modparts = ()
     self.host = 'localhost'
-    self.hostdir = self.moduledir = self.server.requestdir
+    self.hostdir = self.moduledir = self._server.requestdir
     self.auth = None
     self.session = None
     self._responsetype = None
@@ -1299,7 +1325,7 @@ module properties
       pathparts = ()
 
     #http-headers are case-"in"sensitive - do getheader in lowercase
-    self.headers = self.parse_header(hdr)
+    self.headers = self._parse_header(hdr)
 
     clen = self.getheader('content-length')
     if clen:
@@ -1350,7 +1376,7 @@ module properties
     r = _KRESOURCES.get(urlpath)
     if r: return self.sendResponse(r[1], r[0])
 
-    requestdir = self.server.requestdir
+    requestdir = self._server.requestdir
     hostdir = os.path.join(requestdir, host)
     if not os.path.isdir(hostdir):
       hostdir = os.path.join(requestdir, host.split(':')[0])
@@ -1367,8 +1393,8 @@ module properties
     #    auth/cookie/session
     #  * kall module-method only after request-read is complete
     #
-    if self.server.catchall is not None:
-      mod = self.server.catchall
+    if self._server.catchall is not None:
+      mod = self._server.catchall
       self._hostmod = getattr(mod, self.method, None)
       if not callable(self._hostmod):
         return self.sendError(410, 'invalid catchall %s'%urlpath)
@@ -1379,7 +1405,7 @@ module properties
       self.PARSEBODY = getattr(mod, 'PARSEBODY', self.PARSEBODY)
     else:
       #hostmod is requestdir/hostname.kweb not hostdir/index.kweb
-      modfname = os.path.join(self.server.requestdir, host+'.kweb')
+      modfname = os.path.join(self._server.requestdir, host+'.kweb')
       if os.path.isfile(modfname):
         (err, self._hostmod) = _load_path_module_method(modfname)
         if err is not None: return self.sendError(500, 'host-module exception', err)
@@ -1444,7 +1470,7 @@ module properties
         return self.sendError(411, 'content_length > MAXBODYSIZE')
 
       self.parse_query(url[4], self.args)
-      self.session = self.server.gethost(host)[2]
+      self.session = self._server.gethost(host)[2]
       auth = self.headers.get("authorization")
       if auth is not None:
         auth = auth[0].split(' ', 1)
@@ -1459,9 +1485,9 @@ module properties
 
       #could be the least-used feature - useful for segregating different hosts
       #probably better to run multiple kweb instances for each host, though...
-      if self.server.runas > 1:
+      if self._server.runas > 1:
         try:
-          if 2 == self.server.runas: modstat = os.stat(hostdir)
+          if 2 == self._server.runas: modstat = os.stat(hostdir)
           os.setegid(modstat.st_gid)
           os.seteuid(modstat.st_uid)
         except:
@@ -1470,20 +1496,22 @@ module properties
     return None
 
   def _parseBody(self, body):
-    if (body is not None) and self.PARSEBODY:
-      ctype = self.getheader('content-type')
-      if ('multipart/form-data' == ctype[:19]):
-        k, v = self.parse_header_value(ctype)
-        boundary = v.get('boundary')
-        if not boundary:
-          return self.sendError(400, 'no boundary')
-        err, parts = self.parse_formdata(body, boundary)
-        if err: return self.sendError(400, err)
-        self.args.extend(parts)
-      else:
-        #messed-up if request has query-string-params and form as urlencoded - but we deal with it ;-)
-        self.parse_query(body.read(), self.args)
-      self.data = body
+    if body is not None:
+      if self.PARSEBODY:
+        ctype = self.getheader('content-type')
+        if ('multipart/form-data' == ctype[:19]):
+          k, v = self.parse_header_value(ctype)
+          boundary = v.get('boundary')
+          if not boundary:
+            return self.sendError(400, 'no boundary')
+          err, parts = self.parse_formdata(body, boundary)
+          if err: return self.sendError(400, err)
+          self.args.extend(parts)
+        else:
+          #messed-up if request has query-string-params and form as urlencoded - but we deal with it ;-)
+          self.parse_query(body.read(), self.args)
+        body.seek(0) #as it has been parsed above and might be used by mods
+      self.content = body
 
     if self._hostmod is not None:
       if self._kall(self._hostmod, True) is not None: return True
@@ -1530,7 +1558,7 @@ module properties
       result.append((name, value))
     return result
 
-  def parse_header(self, s):
+  def _parse_header(self, s):
     '''
     parse a HTTP header into a dictionary of arrays
 
@@ -1885,7 +1913,7 @@ module properties
       self._send(len(rlines), rlines, 0, '', self.KEEPALIVE)
 
     #minimal log information - more info: referer, useragent, could be accessed by index/modules, if reqd.
-    self.server.log(self.host, self.remoteip, code, clen, self.content_length, self.line)
+    self._server.log(self.host, self.remoteip, code, clen, self.content_length, self.line)
 
     self.method = None #so handle_read processes next request
     return True
@@ -2193,7 +2221,7 @@ Copyright &copy; 2013 &nbsp;<a href="http://www.houseofkodai.in">houseofkodai</a
       return self.sendResponse(R.__doc__%_KWEB_SERVER_VERSION, 'text/plain')
     if '/kweb/log' == self.urlpath:
       a = []
-      for k,v in kweb.server.perhost.items():
+      for k,v in kweb._server.perhost.items():
         a.append('\n%s'%k)
         a.append('\n'.join(str(i) for i in v[0] if i))
       return self.sendResponse('\n'.join(a), 'text/plain')
@@ -3124,7 +3152,7 @@ class _KHTTPClient(asyncore.dispatcher):
         return self.sendError(411, '_KHTTPClient.Content-Length invalid')
       self.data.seek(0)
 
-    self.REQUEST._parseBody(self.data)
+    self.REQUEST._parseBody(self.data) #calls mods so called even if no data
     self.data = '' #so next request can be received
     return True
 
