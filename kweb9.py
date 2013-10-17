@@ -183,6 +183,7 @@ history:
                  include type 0 html
                  append error if fielderror
                added _load_field functions to html_form
+               undo rename _KRequest._server property to server
   16 Oct 2013: renamed _KRequest.data to _KRequest.content
                renamed _KRequest.server property to _server
                renamed _KRequest.parse_header to _parse_header
@@ -1201,7 +1202,7 @@ module properties
     self.version = _KWEB_VERSION
     self.remoteip = clientaddr[0]
     self.clientaddr = clientaddr
-    self._server = server
+    self.server = server
     self.line = None
     self.method = None
     self.url = None
@@ -1258,7 +1259,7 @@ module properties
     if not os.path.isfile(modfname):
       modfname = os.path.join(self.hostdir, name+'.kweb')
     if not os.path.isfile(modfname):
-      modfname = os.path.join(self._server.requestdir, name+'.kweb')
+      modfname = os.path.join(self.server.requestdir, name+'.kweb')
     if not os.path.isfile(modfname):
       return self.sendError(500, 'import module "%s" does not exist'%name)
     (err, mod) = _kimport(modfname)
@@ -1297,7 +1298,7 @@ module properties
     self.content = None #content size:content_lenth
     self.pathparts = self.modparts = ()
     self.host = 'localhost'
-    self.hostdir = self.moduledir = self._server.requestdir
+    self.hostdir = self.moduledir = self.server.requestdir
     self.auth = None
     self.session = None
     self._responsetype = None
@@ -1380,7 +1381,7 @@ module properties
     r = _KRESOURCES.get(urlpath)
     if r: return self.sendResponse(r[1], r[0])
 
-    requestdir = self._server.requestdir
+    requestdir = self.server.requestdir
     hostdir = os.path.join(requestdir, host)
     if not os.path.isdir(hostdir):
       hostdir = os.path.join(requestdir, host.split(':')[0])
@@ -1397,8 +1398,8 @@ module properties
     #    auth/cookie/session
     #  * kall module-method only after request-read is complete
     #
-    if self._server.catchall is not None:
-      mod = self._server.catchall
+    if self.server.catchall is not None:
+      mod = self.server.catchall
       self._hostmod = getattr(mod, self.method, None)
       if not callable(self._hostmod):
         return self.sendError(410, 'invalid catchall %s'%urlpath)
@@ -1409,7 +1410,7 @@ module properties
       self.PARSEBODY = getattr(mod, 'PARSEBODY', self.PARSEBODY)
     else:
       #hostmod is requestdir/hostname.kweb not hostdir/index.kweb
-      modfname = os.path.join(self._server.requestdir, host+'.kweb')
+      modfname = os.path.join(self.server.requestdir, host+'.kweb')
       if os.path.isfile(modfname):
         (err, self._hostmod) = _load_path_module_method(modfname)
         if err is not None: return self.sendError(500, 'host-module exception', err)
@@ -1474,7 +1475,7 @@ module properties
         return self.sendError(411, 'content_length > MAXBODYSIZE')
 
       self.parse_query(url[4], self.args)
-      self.session = self._server.gethost(host)[2]
+      self.session = self.server.gethost(host)[2]
       auth = self.headers.get("authorization")
       if auth is not None:
         auth = auth[0].split(' ', 1)
@@ -1489,9 +1490,9 @@ module properties
 
       #could be the least-used feature - useful for segregating different hosts
       #probably better to run multiple kweb instances for each host, though...
-      if self._server.runas > 1:
+      if self.server.runas > 1:
         try:
-          if 2 == self._server.runas: modstat = os.stat(hostdir)
+          if 2 == self.server.runas: modstat = os.stat(hostdir)
           os.setegid(modstat.st_gid)
           os.seteuid(modstat.st_uid)
         except:
@@ -1917,7 +1918,7 @@ module properties
       self._send(len(rlines), rlines, 0, '', self.KEEPALIVE)
 
     #minimal log information - more info: referer, useragent, could be accessed by index/modules, if reqd.
-    self._server.log(self.host, self.remoteip, code, clen, self.content_length, self.line)
+    self.server.log(self.host, self.remoteip, code, clen, self.content_length, self.line)
 
     self.method = None #so handle_read processes next request
     return True
@@ -2225,7 +2226,7 @@ Copyright &copy; 2013 &nbsp;<a href="http://www.houseofkodai.in">houseofkodai</a
       return self.sendResponse(R.__doc__%_KWEB_SERVER_VERSION, 'text/plain')
     if '/kweb/log' == self.urlpath:
       a = []
-      for k,v in kweb._server.perhost.items():
+      for k,v in kweb.server.perhost.items():
         a.append('\n%s'%k)
         a.append('\n'.join(str(i) for i in v[0] if i))
       return self.sendResponse('\n'.join(a), 'text/plain')
@@ -2985,7 +2986,7 @@ class _kweb(object):
         if not ln: continue
         if '#' == ln[0]: continue
         fv = ln.split(':',2) #other columns can be used for field validation
-        if 2 == len(fv):
+        if len(fv) > 1:
           r[fv[0].strip()] = fv[1].strip()
         else:
           r[fv[0].strip()] = ''
@@ -3313,6 +3314,8 @@ class _KHTTPServer(asyncore.dispatcher):
     elif 'ipblocklist' == key: return self.ipblocklist
     elif 'blockip' == key: return self.blockip
     elif 'clearip' == key: return self.clearip
+    elif 'hostname' == key: return self.hostname
+    elif 'fqdn' == key: return self.fqdn
     return asyncore.dispatcher.__getattr__(self, key)
 
   def count_request(self):
