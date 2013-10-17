@@ -184,6 +184,7 @@ history:
                  append error if fielderror
                added _load_field functions to html_form
                undo rename _KRequest._server property to server
+               added _kweb.smtpmail
   16 Oct 2013: renamed _KRequest.data to _KRequest.content
                renamed _KRequest.server property to _server
                renamed _KRequest.parse_header to _parse_header
@@ -232,6 +233,7 @@ try:
   import urllib
   import traceback
   import collections
+  import smtplib
 except:
   print 'upgrade python to 2.4 or above'
   sys.exit(1)
@@ -1970,7 +1972,7 @@ module properties
       * sticky footer
     '''
     if footer is None:
-      footer = '''<p><a href="http://www.houseofkodai.in"><img src="/bitby.gif" width="115" height="36" alt="bitby" /></a><br/>\
+      footer = '''<p><a href="http://www.houseofkodai.in/kweb"><img src="/bitby.gif" width="115" height="36" alt="bitby" /></a><br/>\
 Copyright &copy; 2013 &nbsp;<a href="http://www.houseofkodai.in">houseofkodai</a>. All Rights Reserved.</p>'''
     return '''<!DOCTYPE html>
 <html lang="en">
@@ -3039,6 +3041,29 @@ class _kweb(object):
         a.append(_fieldset('', fs, fieldvalues, fielderrors))
     a.append('</form>')
     return ''.join(a)
+
+  def smtpmail(self, mxhost, helo, mailfrom, rcptto, data, authuser=None, authpass=None):
+    '''
+    quick and dirty smtp email sender
+    '''
+    try:
+      s = smtplib.SMTP(mxhost)
+      r = s.ehlo(helo)
+      if 250 == r[0]:
+        if authuser and authpass:
+          r = s.login(authuser, authpass)
+        if 250 == r[0]:
+          r = s.mail(mailfrom)
+          if 250 == r[0]:
+            r = s.rcpt(rcptto)
+            if 250 == r[0]:
+              r = s.data(data)
+      s.quit()
+      if 250 <> r[0]:
+        return '- err %s: %s' % (mxhost, r)
+    except Exception,details:
+      return '- err %s: %s' % (mxhost, details)
+    return '+'
 
 _KWEB = _kweb()
 
