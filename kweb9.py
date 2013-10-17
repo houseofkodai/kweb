@@ -179,6 +179,10 @@ pndng:
   * ontimer/onclose events for handler - persistent connection
 
 history:
+  17 OCT 2013: modified _kweb.html_form._fieldset
+                 include type 0 html
+                 append error if fielderror
+               added _load_field functions to html_form
   16 Oct 2013: renamed _KRequest.data to _KRequest.content
                renamed _KRequest.server property to _server
                renamed _KRequest.parse_header to _parse_header
@@ -235,7 +239,7 @@ except:
 # GLOBAL CONSTANTS
 # ##################################################################################################
 _KWEB_VERSION = 9
-_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.OCT.16 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
+_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.OCT.17 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
 
 #common mime-types - add/edit as required
 _KEXTENSIONS_MAP = mimetypes.types_map.copy()
@@ -2903,7 +2907,7 @@ class _kweb(object):
     a.append('</fieldset>')
     return ''.join(a)
 
-  def html_form(self, action='#', fieldsets=(), fieldvalues={}, fielderrors={}, method="POST", enctype='multipart/form-data', attrs=''):
+  def html_form(self, action='', fieldsets=(), fieldvalues={}, fielderrors={}, method='', enctype='', attrs=''):
     '''
       html form generation
         * the last few years experience shows that html/tag generation templating is a mugs game
@@ -2915,25 +2919,78 @@ class _kweb(object):
           better to set class attribute to form element and define it in css
           or use a enclosing div for that
         * sets' field-names and id to be the same - not convinced about use-case for different name/id
+        * http://www.w3.org/TR/html401/interact/forms.html#h-17.3
+        * when the form includes a TYPE=file INPUT element, the ENCTYPE should be multipart/form-data and the METHOD must be post
 
       args:
              action: form action
           fieldsets: tuple of fieldsets
                      fieldset: tuple of fields
                                field: (type, name, label, args)
-                                        type: (1:text, 2:submit, 3:password, 4:checkbox, 5:file, 6:radio, 7:select, 8:textarea)
+                                        type: (0:html, 1:text, 2:submit, 3:password, 4:checkbox, 5:file, 6:radio, 7:select, 8:textarea)
                                         name: field name
                                        label: field label
-                                       args: list of name/value pairs for select/radio or element attributes for textarea
+                                        args: list of name/value pairs for select/radio or element attributes for textarea
         fieldvalues: dictionary of field-name and field-value
         fielderrors: dictionary of field-name and field-errors - which gets added below field element
-             method: form submit method
-            enctype: encoding type (application/x-www-form-urlencoded or multipart/form-data)
+             method: form submit method *GET or POST (default is *)
+            enctype: encoding type *application/x-www-form-urlencoded or multipart/form-data (default is *)
               attrs: form element attributes ex. id="frmX"
 
       returns:
         string: html form
     '''
+    def _load_fieldsets(fname):
+      r = []
+      try:
+        flines = file(fname).readlines()
+      except:
+        return tuple(r)
+      for ln in flines:
+        ln = ln.strip()
+        if not ln: continue
+        c1 = ln[0]
+        if '#' == c1: continue
+        if (c1 >= '0') and (c1 <= '9'):
+          c1 = int(c1)
+          if 0 == c1:
+            fa = ln.split(':',1)
+          else:
+            fa = [f.strip() for f in ln.split(':',3)]
+            if 4 == len(fa):
+              if (6 == c1) or (7 == c1):
+                args = tuple([f.strip() for f in fa[3].split(',')])
+                if (len(args[0].split(' ',1)) > 1):
+                  fa[3] = tuple([tuple(i.split(' ',1)) for i in args])
+          fa[0] = c1
+          if r:
+            r[-1].append(tuple(fa))
+          else:
+            r.append([tuple(fa)])
+        else:
+          if '_' == ln:
+            r.append([''])
+          else:
+            r.append([ln])
+      return tuple(r)
+
+    def _load_fieldvalues(fname):
+      r = {}
+      try:
+        flines = file(fname).readlines()
+      except:
+        return r
+      for ln in flines:
+        ln = ln.strip()
+        if not ln: continue
+        if '#' == ln[0]: continue
+        fv = ln.split(':',1)
+        if 2 == len(fv):
+          r[fv[0].strip()] = fv[1].strip()
+        else:
+          r[fv[0].strip()] = ''
+      return r
+
     def _fieldset(legend='', fields=(), fieldvalues={}, fielderrors={}):
       if legend:
         a = ['<fieldset><legend>%s</legend>'%(legend)]
@@ -2942,25 +2999,38 @@ class _kweb(object):
       for f in fields:
         nf = len(f)
         if (not f) or (nf < 1): continue
-        if 1 == f[0]:
+        if 0 == f[0]:
+          a.append(f[1])
+        elif 1 == f[0]:
           a.append(self.html_input(f[1], None, fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
-        if 2 == f[0]:
+        elif 2 == f[0]:
           a.append(self.html_input(f[1], 'submit', fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
-        if 3 == f[0]:
+        elif 3 == f[0]:
           a.append(self.html_input(f[1], 'password', fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
-        if 4 == f[0]:
+        elif 4 == f[0]:
           a.append(self.html_input(f[1], 'checkbox', fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
-        if 5 == f[0]:
+        elif 5 == f[0]:
           a.append(self.html_input(f[1], 'file', fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
-        if 6 == f[0]:
+        elif 6 == f[0]:
           a.append(self.html_radio_list(f[1], fieldvalues.get(f[1]), (f[2] if (nf>2) else None), (f[3] if (nf>3) else ())))
-        if 7 == f[0]:
+        elif 7 == f[0]:
           a.append(self.html_select(f[1], fieldvalues.get(f[1]), (f[2] if (nf>2) else None), (f[3] if (nf>3) else ())))
-        if 8 == f[0]:
+        elif 8 == f[0]:
           a.append(self.html_textarea(f[1], fieldvalues.get(f[1]), (f[2] if (nf>2) else None), (f[3] if (nf>3) else '')))
+        ferr = fielderrors.get(f[1])
+        if ferr: a.append(ferr)
       if legend: a.append('</fieldset>')
-      return '\n'.join(a)
-    a = ['<form action="%s" method="%s" enctype="%s" %s>'%(action, method, enctype, attrs)]
+      return ''.join(a)
+    a = ['<form']
+    if action: a.append(' action="%s"'%action)
+    if method: a.append(' method="%s"'%method)
+    if enctype: a.append(' enctype="%s"'%method)
+    if attrs: a.append(attrs)
+    a.append('>')
+    if type(fieldvalues) == type(''):
+      fieldvalues = _load_fieldvalues(fieldvalues)
+    if type(fieldsets) == type(''):
+      fieldsets = _load_fieldsets(fieldsets)
     for fs in fieldsets:
       if (type(fs[0]) == type('')):
         a.append(_fieldset(fs[0], fs[1:], fieldvalues, fielderrors))
@@ -3229,6 +3299,9 @@ class _KHTTPServer(asyncore.dispatcher):
     #search path for default module import - can override default modules here
     sys.path.insert(0, self.requestdir)
     self.catchall = options.catchall
+    #convinence functions
+    self.hostname = socket.gethostname()
+    self.fqdn = socket.getfqdn()
 
   def __getattr__(self, key):
     if 'debugfname' == key: return self.debugfname
