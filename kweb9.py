@@ -2984,7 +2984,7 @@ class _kweb(object):
         ln = ln.strip()
         if not ln: continue
         if '#' == ln[0]: continue
-        fv = ln.split(':',1)
+        fv = ln.split(':',2) #other columns can be used for field validation
         if 2 == len(fv):
           r[fv[0].strip()] = fv[1].strip()
         else:
