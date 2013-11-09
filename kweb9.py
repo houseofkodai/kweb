@@ -179,6 +179,10 @@ pndng:
   * ontimer/onclose events for handler - persistent connection
 
 history:
+  09 NOV 2013: modified site.css to increase line-height and thinner top-border
+  22 OCT 2013: removed _kweb.html_form._load_fieldvalues
+               modified _kweb.load_form to include default field values
+               renamed _kweb..html_form._load_fieldsets into _kweb.load_form - to enable use in form validation
   17 OCT 2013: modified _kweb.html_form._fieldset
                  include type 0 html
                  append error if fielderror
@@ -242,7 +246,7 @@ except:
 # GLOBAL CONSTANTS
 # ##################################################################################################
 _KWEB_VERSION = 9
-_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.OCT.17 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
+_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.NOV.09 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
 
 #common mime-types - add/edit as required
 _KEXTENSIONS_MAP = mimetypes.types_map.copy()
@@ -981,6 +985,7 @@ footer {background-color:#f0f0f0;}
  background-color:#FEFEFE;
  text-align:left;
  margin: auto;
+ line-height: 1.6em;
 }
 .content > p,ul,ol,dl,h1,h2,h3,h4,h5,h6,pre,blockquote {
  padding-top: .5em;
@@ -1016,7 +1021,7 @@ footer {background-color:#f0f0f0;}
 .content td {vertical-align:top;}
 .content td.last {width:1px; white-space: nowrap;}
 
-.topborder {height:.5em; background: #00709f;}
+.topborder {height:.27em; background: #00709f;}
 
 nav {
  width:100%;
@@ -2847,14 +2852,14 @@ class _kweb(object):
       i += 1
     return local, emailid[len(local)+1:]
 
-  def html_input(self, name='html_input', type=None, value=None, label=None):
+  def html_input(self, name='html_input', typ=None, value=None, label=None):
     if label:
       el = ['<label for="%s">%s</label><input name="%s" id="%s"'%(name, label, name, name)]
     else:
       el = ['<input name="%s"'%(name)]
-    if type: el.append(' type="%s"'%type)
+    if typ: el.append(' type="%s"'%typ)
     if value:
-      if 'checkbox' == type:
+      if 'checkbox' == typ:
         el.append(' checked')
       else:
         el.append(' value="%s"'%value)
@@ -2910,6 +2915,43 @@ class _kweb(object):
     a.append('</fieldset>')
     return ''.join(a)
 
+  def load_form(self, fname):
+    '''
+    form definition parser that generates fieldsets used by html_form
+    '''
+    r = []
+    try:
+      flines = file(fname).readlines()
+    except:
+      return tuple(r)
+    for ln in flines:
+      ln = ln.strip()
+      if not ln: continue
+      c1 = ln[0]
+      if '#' == c1: continue
+      if (c1 >= '0') and (c1 <= '9'):
+        c1 = int(c1)
+        if 0 == c1:
+          fa = ln.split(':',1)
+        else:
+          fa = [f.strip() for f in ln.split(':',4)]
+          if 5 == len(fa):
+            if (6 == c1) or (7 == c1):
+              args = tuple([f.strip() for f in fa[4].split(',')])
+              if (len(args[0].split(' ',1)) > 1):
+                fa[4] = tuple([tuple(i.split(' ',1)) for i in args])
+        fa[0] = c1
+        if r:
+          r[-1].append(tuple(fa))
+        else:
+          r.append([tuple(fa)])
+      else:
+        if '_' == ln:
+          r.append([''])
+        else:
+          r.append([ln])
+    return tuple(r)
+
   def html_form(self, action='', fieldsets=(), fieldvalues={}, fielderrors={}, method='', enctype='', attrs=''):
     '''
       html form generation
@@ -2927,10 +2969,11 @@ class _kweb(object):
 
       args:
              action: form action
-          fieldsets: tuple of fieldsets
+          fieldsets: tuple of fieldsets or file containing fieldsets
                      fieldset: tuple of fields
                                field: (type, name, label, args)
                                         type: (0:html, 1:text, 2:submit, 3:password, 4:checkbox, 5:file, 6:radio, 7:select, 8:textarea)
+                                       value: default value
                                         name: field name
                                        label: field label
                                         args: list of name/value pairs for select/radio or element attributes for textarea
@@ -2943,57 +2986,6 @@ class _kweb(object):
       returns:
         string: html form
     '''
-    def _load_fieldsets(fname):
-      r = []
-      try:
-        flines = file(fname).readlines()
-      except:
-        return tuple(r)
-      for ln in flines:
-        ln = ln.strip()
-        if not ln: continue
-        c1 = ln[0]
-        if '#' == c1: continue
-        if (c1 >= '0') and (c1 <= '9'):
-          c1 = int(c1)
-          if 0 == c1:
-            fa = ln.split(':',1)
-          else:
-            fa = [f.strip() for f in ln.split(':',3)]
-            if 4 == len(fa):
-              if (6 == c1) or (7 == c1):
-                args = tuple([f.strip() for f in fa[3].split(',')])
-                if (len(args[0].split(' ',1)) > 1):
-                  fa[3] = tuple([tuple(i.split(' ',1)) for i in args])
-          fa[0] = c1
-          if r:
-            r[-1].append(tuple(fa))
-          else:
-            r.append([tuple(fa)])
-        else:
-          if '_' == ln:
-            r.append([''])
-          else:
-            r.append([ln])
-      return tuple(r)
-
-    def _load_fieldvalues(fname):
-      r = {}
-      try:
-        flines = file(fname).readlines()
-      except:
-        return r
-      for ln in flines:
-        ln = ln.strip()
-        if not ln: continue
-        if '#' == ln[0]: continue
-        fv = ln.split(':',2) #other columns can be used for field validation
-        if len(fv) > 1:
-          r[fv[0].strip()] = fv[1].strip()
-        else:
-          r[fv[0].strip()] = ''
-      return r
-
     def _fieldset(legend='', fields=(), fieldvalues={}, fielderrors={}):
       if legend:
         a = ['<fieldset><legend>%s</legend>'%(legend)]
@@ -3001,27 +2993,33 @@ class _kweb(object):
         a = []
       for f in fields:
         nf = len(f)
-        if (not f) or (nf < 1): continue
-        if 0 == f[0]:
+        if (not f) or (nf < 2): continue
+        ft = f[0]
+        ferr = None
+        if 0 != ft:
+          fn = f[2]
+          fv = fieldvalues.get(fn, f[1])
+          f3 = (f[3] if (nf>3) else None)
+          ferr = fielderrors.get(fn)
+        if 0 == ft:
           a.append(f[1])
-        elif 1 == f[0]:
-          a.append(self.html_input(f[1], None, fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
-        elif 2 == f[0]:
-          a.append(self.html_input(f[1], 'submit', fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
-        elif 3 == f[0]:
-          a.append(self.html_input(f[1], 'password', fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
-        elif 4 == f[0]:
-          a.append(self.html_input(f[1], 'checkbox', fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
-        elif 5 == f[0]:
-          a.append(self.html_input(f[1], 'file', fieldvalues.get(f[1]), (f[2] if (nf>2) else None)))
-        elif 6 == f[0]:
-          a.append(self.html_radio_list(f[1], fieldvalues.get(f[1]), (f[2] if (nf>2) else None), (f[3] if (nf>3) else ())))
-        elif 7 == f[0]:
-          a.append(self.html_select(f[1], fieldvalues.get(f[1]), (f[2] if (nf>2) else None), (f[3] if (nf>3) else ())))
-        elif 8 == f[0]:
-          a.append(self.html_textarea(f[1], fieldvalues.get(f[1]), (f[2] if (nf>2) else None), (f[3] if (nf>3) else '')))
-        ferr = fielderrors.get(f[1])
-        if ferr: a.append(ferr)
+        elif 1 == ft:
+          a.append(self.html_input(fn, None, fv, f3))
+        elif 2 == ft:
+          a.append(self.html_input(fn, 'submit', fv, f3))
+        elif 3 == ft:
+          a.append(self.html_input(fn, 'password', fv, f3))
+        elif 4 == ft:
+          a.append(self.html_input(fn, 'checkbox', fv, f3))
+        elif 5 == ft:
+          a.append(self.html_input(fn, 'file', fv, f3))
+        elif 6 == ft:
+          a.append(self.html_radio_list(fn, fv, f3, (f[4] if (nf>4) else ())))
+        elif 7 == ft:
+          a.append(self.html_select(fn, fv, f3, (f[4] if (nf>4) else ())))
+        elif 8 == ft:
+          a.append(self.html_textarea(fn, fv, f3, (f[4] if (nf>4) else '')))
+        if ferr is not None: a.append(ferr)
       if legend: a.append('</fieldset>')
       return ''.join(a)
     a = ['<form']
@@ -3030,10 +3028,8 @@ class _kweb(object):
     if enctype: a.append(' enctype="%s"'%method)
     if attrs: a.append(attrs)
     a.append('>')
-    if type(fieldvalues) == type(''):
-      fieldvalues = _load_fieldvalues(fieldvalues)
     if type(fieldsets) == type(''):
-      fieldsets = _load_fieldsets(fieldsets)
+      fieldsets = self.load_form(fieldsets)
     for fs in fieldsets:
       if (type(fs[0]) == type('')):
         a.append(_fieldset(fs[0], fs[1:], fieldvalues, fielderrors))
