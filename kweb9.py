@@ -179,6 +179,11 @@ pndng:
   * ontimer/onclose events for handler - persistent connection
 
 history:
+  22 NOV 2013: modified dirlist to display time, if today
+               renamed dirlist to listdir
+               made _dirlist public as htmldir
+               changed order of directory listing to date, size name
+  20 NOV 2013: modified server.debugfname to use request_count instead of conn_count
   09 NOV 2013: modified site.css to increase line-height and thinner top-border
   22 OCT 2013: removed _kweb.html_form._load_fieldvalues
                modified _kweb.load_form to include default field values
@@ -246,7 +251,7 @@ except:
 # GLOBAL CONSTANTS
 # ##################################################################################################
 _KWEB_VERSION = 9
-_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.NOV.09 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
+_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.NOV.22 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
 
 #common mime-types - add/edit as required
 _KEXTENSIONS_MAP = mimetypes.types_map.copy()
@@ -1164,11 +1169,13 @@ REQUEST-methods
 ---------------
  addResponseHeader(line)
   None
- dirlist(self, path='', sortby=0, fext=(), rtype=2)
+ listdir(path='', sortby=0, fext=(), rtype=2)
   None, 'str', ()
  getheader(key, default='')
   'str'
  html(body='<p>arigato gozaimasu</p>', title='(-: kweb9 :-)', headend='', footer=None)
+  'str'
+ htmldir(sortby=-2, fext=())
   'str'
  htmlescape(s)
   'str'
@@ -1199,6 +1206,22 @@ module properties
  MAXBODYSIZE = 26214400 #25 MB
  PARSEBODY = True
 
+common error-response-codes
+---------------------------
+ 400 Bad request
+ 401 Unauthorized
+ 403 Forbidden
+ 404 Not Found
+ 408 Request Time-out
+ 411 Length Required
+ 413 Request Entity Too Large
+ 414 Request-URI Too Long
+ 415 Unsupported Media Type
+ 416 Requested Range Not Satisfiable
+ 500 Internal error
+ 501 Not Implemented
+ 503 Service temporarily overloaded
+ 505 HTTP Version not supported
 '''
   def __init__(self, clientaddr, server, send):
     '''
@@ -1458,7 +1481,7 @@ module properties
               self._pathmod = None #path/index.kweb is longer than path.kweb
               modstat = os.stat(modfname)
               self.modparts = tuple(pathparts[i+1:])
-              self.moduledir = mdir
+              self.moduledir = mpath
               self._modindex = i+1
             modfname = mpath + '.kweb'
             if os.path.isfile(modfname):
@@ -2118,7 +2141,7 @@ Copyright &copy; 2013 &nbsp;<a href="http://www.houseofkodai.in">houseofkodai</a
     '''
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
-  def dirlist(self, path='', sortby=0, fext=(), rtype=2):
+  def listdir(self, path='', sortby=0, fext=(), rtype=2):
     '''
     list the files in a directory
 
@@ -2167,16 +2190,22 @@ Copyright &copy; 2013 &nbsp;<a href="http://www.houseofkodai.in">houseofkodai</a
     if i < 4: flist.sort(key=lambda a:a[i-1], reverse=(sortby<0))
     #sequence-order is most-likely to less likely
     if 2 == rtype:
-      div = ['<table id="dirtable">\n<tr><th align="right">Size</th><th align="left">Name</th><th align="left">Date</th></tr>']
+      div = ['<table id="dirtable">\n<tr><th align="right">Size</th><th align="left">Date</th><th align="left">Name</th></tr>']
       suffix = ('','/','@')
       lnksuffix = ('','/','')
       uq = urllib.quote
       htmlescape = self.htmlescape
+      now = time.localtime()
       for i in flist:
         name = i[0]
         if ('.kweb' == name[-5:]): name = name[:-5]
-        div.append('<tr><td align="right">%s</td><td><a href="%s%s">%s%s</a></td><td>%s</td></tr>'%
-          (i[2], uq(name), lnksuffix[i[3]], htmlescape(name), suffix[i[3]], time.strftime('%d %b %Y', time.localtime(i[1]))))
+        fdate = time.localtime(i[1])
+        if (fdate.tm_year == now.tm_year) and (fdate.tm_mon == now.tm_mon) and (fdate.tm_mday == now.tm_mday):
+          datestr = time.strftime('Today, %H:%M', fdate) #can also use %I:%M %p for 12 hour format
+        else:
+          datestr = time.strftime('%d %b %Y', fdate)
+        div.append('<tr><td align="right">%s</td><td>%s</td><td><a href="%s%s">%s%s</a></td></tr>'%
+          (_KWEB.strsize(i[2]), datestr, uq(name), lnksuffix[i[3]], htmlescape(name), suffix[i[3]]))
       div.append('</table>')
       return '\n'.join(div)
     elif 0 == rtype:
@@ -2187,7 +2216,26 @@ Copyright &copy; 2013 &nbsp;<a href="http://www.houseofkodai.in">houseofkodai</a
       return '\n'.join('%5d %s %s'%(i[2], time.strftime('%d %b %Y', time.localtime(i[1])), i[0]) for i in flist)
     return None #should not come here - better to enable the caller to get an exception by attempting to use None
 
-  def _dirlist(self, urlpath=''):
+  def htmldir(self, urlpath='/', sortby=-2, fext=()):
+    '''
+    list of files in a directory
+
+    args:
+     urlpath: url-path that along-with hostdir is file-system path
+      sortby: sort by field (name, time, size)
+              0 none 1 name 2 time 3 size
+              negative numbers reverse the sort order
+        fext: tuple of file-extensions (endswith strings)
+              ex. fext=('.txt', '.log', '.tmp')
+
+    returns:
+      success:
+        html
+      error:
+        html
+
+    notes:
+    '''
     def bread_crumb(path='', host=''):
       u = ''
       bc = []
@@ -2203,11 +2251,10 @@ Copyright &copy; 2013 &nbsp;<a href="http://www.houseofkodai.in">houseofkodai</a
       else:
         if foo: return '<a href="/">%s</a>/%s' % (host, foo[-1])
         else: return host
-    dirpath = self.hostdir + urlpath
     div = ['<div id="divdir">']
     if urlpath[-1] != '/': div.append('<base href="%s/" />'%urlpath)
     div.append(bread_crumb(urlpath, self.host))
-    div.append(self.dirlist(dirpath, -2))
+    div.append(self.listdir(self.hostdir + urlpath, sortby, fext))
     div.append('</div>')
     return '\n'.join(div)
 
@@ -2222,9 +2269,9 @@ Copyright &copy; 2013 &nbsp;<a href="http://www.houseofkodai.in">houseofkodai</a
       if os.path.isfile(fqname): return self.sendFile(fqname)
       fqname = fqname[:-1] #index.htm
       if os.path.isfile(fqname): return self.sendFile(fqname)
-      #no-need for redirect - as <base> element added in dirlist
+      #no-need for redirect - as <base> element added in listdir
       #if '/' != urlpath[-1]: return self.sendRedirect(urlpath+'/')
-      return self.sendResponse(self.html(self._dirlist(self.urlpath)))
+      return self.sendResponse(self.html(self.htmldir(R.urlpath)))
 
     item = _KRESOURCES_DEFAULT.get(self.urlpath)
     if item:
@@ -3196,7 +3243,7 @@ class _KHTTPClient(asyncore.dispatcher):
     if 0 == len(data):
       return self.handle_close() #socket closed connection eof
     if self.server.debugfname:
-      try: file(self.server.debugfname, 'ab').write(data)
+      try: file(self.server.debugfname+'.response', 'ab').write(data)
       except: pass
 
     # BEGIN header processing
@@ -3390,7 +3437,7 @@ class _KHTTPServer(asyncore.dispatcher):
     if self.checkip(conn, addr): return
     self.conn_count += 1
     if self.debugdir:
-      self.debugfname = os.path.join(self.debugdir, '%f.http'%self.conn_count)
+      self.debugfname = os.path.join(self.debugdir, '%f.http'%self.request_count)
     try: _KHTTPClient(conn, addr, self)
     except:
       self.log_info(traceback.format_exc(), 'warning')
