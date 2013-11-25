@@ -179,6 +179,7 @@ pndng:
   * ontimer/onclose events for handler - persistent connection
 
 history:
+  25 NOV 2013: modified site.css
   22 NOV 2013: modified dirlist to display time, if today
                renamed dirlist to listdir
                made _dirlist public as htmldir
@@ -251,7 +252,7 @@ except:
 # GLOBAL CONSTANTS
 # ##################################################################################################
 _KWEB_VERSION = 9
-_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.NOV.22 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
+_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.NOV.25 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
 
 #common mime-types - add/edit as required
 _KEXTENSIONS_MAP = mimetypes.types_map.copy()
@@ -986,11 +987,18 @@ footer {background-color:#f0f0f0;}
  margin: 0px 0px -3.8em 0px;
 }
 .content {
+ font-family: "Open Sans", "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif;
  padding: 1em 1em 3.8em 1em;
  background-color:#FEFEFE;
  text-align:left;
  margin: auto;
- line-height: 1.6em;
+ line-height: 1.8em;
+}
+h1, h2, h3, h4, h5, h6 {
+ font-weight: 300;
+ font-style: normal;
+ line-height: 1.4em;
+ margin-top: 1.2em;
 }
 .content > p,ul,ol,dl,h1,h2,h3,h4,h5,h6,pre,blockquote {
  padding-top: .5em;
@@ -1010,6 +1018,7 @@ footer {background-color:#f0f0f0;}
 .content dd {
  padding-left: .5em;
  border-left: 2px solid #DDD;
+ margin-bottom: 1.1em;
 }
 .content pre {
  background-color: #DDD;
@@ -1023,8 +1032,10 @@ footer {background-color:#f0f0f0;}
  color: #444;
  text-indent: 0;
 }
-.content td {vertical-align:top;}
-.content td.last {width:1px; white-space: nowrap;}
+.content table {width:100%; border-collapse: collapse;}
+.content table th {background-color:#DDD; border:1px solid #DDD; padding:.2em;}
+.content table td {vertical-align:top; border:1px solid #DDD; padding:.2em;}
+.content table td.last {width:1px; white-space: nowrap;}
 
 .topborder {height:.27em; background: #00709f;}
 
@@ -2198,6 +2209,7 @@ Copyright &copy; 2013 &nbsp;<a href="http://www.houseofkodai.in">houseofkodai</a
       now = time.localtime()
       for i in flist:
         name = i[0]
+        if (name == 'index.kweb'): continue
         if ('.kweb' == name[-5:]): name = name[:-5]
         fdate = time.localtime(i[1])
         if (fdate.tm_year == now.tm_year) and (fdate.tm_mon == now.tm_mon) and (fdate.tm_mday == now.tm_mday):
