@@ -2014,7 +2014,7 @@ common error-response-codes
     '''
     if footer is None:
       footer = '''<p><a href="http://www.houseofkodai.in/kweb"><img src="/bitby.gif" width="115" height="36" alt="bitby" /></a><br/>\
-Copyright &copy; 2013 &nbsp;<a href="http://www.houseofkodai.in">houseofkodai</a>. All Rights Reserved.</p>'''
+Copyright &copy; 2013 &nbsp;<a href="http://www.houseofkodai.in">houseofkodai</a></p>'''
     return '''<!DOCTYPE html>
 <html lang="en">
 <head>
