@@ -2235,18 +2235,14 @@ Copyright &copy; 2013 &nbsp;<a href="http://www.houseofkodai.in">houseofkodai</a
       return '\n'.join('%5d %s %s'%(i[2], time.strftime('%d %b %Y', time.localtime(i[1])), i[0]) for i in flist)
     return None #should not come here - better to enable the caller to get an exception by attempting to use None
 
-  def htmldir(self, urlpath='/', sortby=-2, fext=()):
+  def htmldir(self, urlpath='/', args=()):
     '''
     list of files in a directory
 
     args:
      urlpath: url-path that along-with hostdir is file-system path
-      sortby: sort by field (name, time, size)
-              0 none 1 name 2 time 3 size
-              negative numbers reverse the sort order
-        fext: tuple of file-extensions (endswith strings)
-              ex. fext=('.txt', '.log', '.tmp')
-
+        args: tuple of key, value pairs (notably keys sortby and fext)
+              convinent to pass REQUEST.args object
     returns:
       success:
         html
@@ -2273,6 +2269,14 @@ Copyright &copy; 2013 &nbsp;<a href="http://www.houseofkodai.in">houseofkodai</a
     div = ['<div id="divdir">']
     if urlpath[-1] != '/': div.append('<base href="%s/" />'%urlpath)
     div.append(bread_crumb(urlpath, self.host))
+    sortby = -2
+    fext = ()
+    for k,v in args:
+      if 'sortby' == k:
+        try: sortby = int(v)
+        except: sortby = -2
+      if 'fext' == k:
+        fext =  v.split(',')
     div.append(self.listdir(self.hostdir + urlpath, sortby, fext))
     div.append('</div>')
     return '\n'.join(div)
@@ -2290,15 +2294,7 @@ Copyright &copy; 2013 &nbsp;<a href="http://www.houseofkodai.in">houseofkodai</a
       if os.path.isfile(fqname): return self.sendFile(fqname)
       #no-need for redirect - as <base> element added in listdir
       #if '/' != urlpath[-1]: return self.sendRedirect(urlpath+'/')
-      sortby = -2
-      fext = ()
-      for k,v in R.args:
-        if 'sortby' == k:
-          try: sortby = int(v)
-          except: sortby = -2
-        if 'fext' == k:
-          fext =  v.split(',')
-      return self.sendResponse(self.html(self.htmldir(R.urlpath, sortby, fext)))
+      return self.sendResponse(self.html(self.htmldir(R.urlpath, R.args)))
 
     item = _KRESOURCES_DEFAULT.get(self.urlpath)
     if item:
