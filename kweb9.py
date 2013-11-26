@@ -179,6 +179,8 @@ pndng:
   * ontimer/onclose events for handler - persistent connection
 
 history:
+  26 NOV 2013: removed 100% width in site.css table
+               added sorting for directory listing
   25 NOV 2013: modified site.css
   22 NOV 2013: modified dirlist to display time, if today
                renamed dirlist to listdir
@@ -252,7 +254,7 @@ except:
 # GLOBAL CONSTANTS
 # ##################################################################################################
 _KWEB_VERSION = 9
-_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.NOV.25 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
+_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.NOV.26 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
 
 #common mime-types - add/edit as required
 _KEXTENSIONS_MAP = mimetypes.types_map.copy()
@@ -1032,7 +1034,7 @@ h1, h2, h3, h4, h5, h6 {
  color: #444;
  text-indent: 0;
 }
-.content table {width:100%; border-collapse: collapse;}
+.content table {border-collapse: collapse;}
 .content table th {background-color:#DDD; border:1px solid #DDD; padding:.2em;}
 .content table td {vertical-align:top; border:1px solid #DDD; padding:.2em;}
 .content table td.last {width:1px; white-space: nowrap;}
@@ -2197,11 +2199,16 @@ Copyright &copy; 2013 &nbsp;<a href="http://www.houseofkodai.in">houseofkodai</a
         flist.append((fname, 0, 0, ftype)) #so errors can be detected by caller
         continue
       flist.append((fname, int(fs.st_mtime), fs.st_size, ftype))
+    if (sortby > 3) or (sortby < -3): sortby = -2
     i = abs(sortby)
-    if i < 4: flist.sort(key=lambda a:a[i-1], reverse=(sortby<0))
+    flist.sort(key=lambda a:a[i-1], reverse=(sortby<0))
     #sequence-order is most-likely to less likely
     if 2 == rtype:
-      div = ['<table id="dirtable">\n<tr><th align="right">Size</th><th align="left">Date</th><th align="left">Name</th></tr>']
+      sb = [1, -2, -3]
+      sb[i-1] = -sortby
+      if fext: fext = '&fext=%s'%','.join(fext)
+      else: fext = ''
+      div = ['<table id="dirtable">\n<tr><th align="right"><a href="?sortby=%d%s">Size</a></th><th align="left"><a href="?sortby=%d%s">Date</a></th><th align="left"><a href="?sortby=%d%s">Name</a></th></tr>'%(sb[2], fext, sb[1], fext, sb[0], fext)]
       suffix = ('','/','@')
       lnksuffix = ('','/','')
       uq = urllib.quote
@@ -2283,7 +2290,15 @@ Copyright &copy; 2013 &nbsp;<a href="http://www.houseofkodai.in">houseofkodai</a
       if os.path.isfile(fqname): return self.sendFile(fqname)
       #no-need for redirect - as <base> element added in listdir
       #if '/' != urlpath[-1]: return self.sendRedirect(urlpath+'/')
-      return self.sendResponse(self.html(self.htmldir(R.urlpath)))
+      sortby = -2
+      fext = ()
+      for k,v in R.args:
+        if 'sortby' == k:
+          try: sortby = int(v)
+          except: sortby = -2
+        if 'fext' == k:
+          fext =  v.split(',')
+      return self.sendResponse(self.html(self.htmldir(R.urlpath, sortby, fext)))
 
     item = _KRESOURCES_DEFAULT.get(self.urlpath)
     if item:
