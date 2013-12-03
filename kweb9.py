@@ -179,6 +179,7 @@ pndng:
   * ontimer/onclose events for handler - persistent connection
 
 history:
+  03 DEC 2013: made footer font smaller in css
   26 NOV 2013: removed 100% width in site.css table
                added sorting for directory listing
   25 NOV 2013: modified site.css
@@ -254,7 +255,7 @@ except:
 # GLOBAL CONSTANTS
 # ##################################################################################################
 _KWEB_VERSION = 9
-_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.NOV.26 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
+_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.DEC.03 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
 
 #common mime-types - add/edit as required
 _KEXTENSIONS_MAP = mimetypes.types_map.copy()
@@ -980,7 +981,7 @@ body {
  color:#333;
  text-align:center;
 }
-footer {background-color:#f0f0f0;}
+footer {background-color:#f0f0f0; font-size:smaller;}
 .uptofooter {width:100%;}
 .uptofooter {
  min-height: 100%;
@@ -3098,10 +3099,11 @@ class _kweb(object):
     if enctype: a.append(' enctype="%s"'%method)
     if attrs: a.append(attrs)
     a.append('>')
-    if type(fieldsets) == type(''):
+    strtype = type('')
+    if type(fieldsets) == strtype:
       fieldsets = self.load_form(fieldsets)
     for fs in fieldsets:
-      if (type(fs[0]) == type('')):
+      if type(fs[0]) == strtype:
         a.append(_fieldset(fs[0], fs[1:], fieldvalues, fielderrors))
       else:
         a.append(_fieldset('', fs, fieldvalues, fielderrors))
