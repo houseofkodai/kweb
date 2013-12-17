@@ -179,6 +179,9 @@ pndng:
   * ontimer/onclose events for handler - persistent connection
 
 history:
+  17 DEC 2013: big-file downloads were causing random problems - removed outgoing.clear from _KHTTPClient.write as it was already in _KHTTPClient.close
+               added /kweb/ip URI
+  16 DEC 2013: modified _parseHeader to check content-length before parsebody tests "if (clen > 0) and self.PARSEBODY:"
   03 DEC 2013: made footer font smaller in css
   26 NOV 2013: removed 100% width in site.css table
                added sorting for directory listing
@@ -255,7 +258,7 @@ except:
 # GLOBAL CONSTANTS
 # ##################################################################################################
 _KWEB_VERSION = 9
-_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.DEC.03 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
+_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.DEC.17 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
 
 #common mime-types - add/edit as required
 _KEXTENSIONS_MAP = mimetypes.types_map.copy()
@@ -1385,7 +1388,7 @@ common error-response-codes
       # if PARSEBODY must have valid Content-Type
       # else module can do whatever it wants with body/content
       #
-      if self.PARSEBODY:
+      if (clen > 0) and self.PARSEBODY:
         ctype = self.getheader('content-type')
         if ctype:
           ctlen = len(ctype)
@@ -2302,9 +2305,11 @@ Copyright &copy; 2013 &nbsp;<a href="http://www.houseofkodai.in">houseofkodai</a
       return self.sendResponse(item[1], item[0])
     if '/kweb' == self.urlpath:
       return self.sendResponse(R.__doc__%_KWEB_SERVER_VERSION, 'text/plain')
+    if '/kweb/ip' == self.urlpath:
+      return self.sendResponse(R.remoteip, 'text/plain')
     if '/kweb/log' == self.urlpath:
       a = []
-      for k,v in kweb.server.perhost.items():
+      for k,v in self.server.perhost.items():
         a.append('\n%s'%k)
         a.append('\n'.join(str(i) for i in v[0] if i))
       return self.sendResponse('\n'.join(a), 'text/plain')
@@ -3172,9 +3177,6 @@ class _KHTTPClient(asyncore.dispatcher):
     '''
     called by the Request object to send data back to client
     '''
-    #close file-handle of previous request, handle_close does it, but still...
-    [fh.close() for (fh,n) in self.outgoing if hasattr(fh, 'close')]
-    self.outgoing.clear()
     if hlen: self.outgoing.append((hlen, hdr))
     if clen: self.outgoing.append((clen, content))
     if not keepalive: self.outgoing.append((None,0))
@@ -3238,6 +3240,7 @@ class _KHTTPClient(asyncore.dispatcher):
 
   def handle_close(self):
     [fh.close() for (fh,n) in self.outgoing if hasattr(fh, 'close')]
+    self.outgoing.clear()
     self.close()
 
   def handle_read(self):
