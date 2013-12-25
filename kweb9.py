@@ -178,7 +178,13 @@ pndng:
   * bandwidth throttling
   * ontimer/onclose events for handler - persistent connection
 
+notes:
+  * enumerate list of local IP addresses
+    list(set(i[4][0] for i in socket.getaddrinfo(socket.gethostname(), None)))
+
 history:
+  25 DEC 2013: modified format of field-set from "value name" to "name=value"
+               changed load_form, html_select, html_radio_list
   17 DEC 2013: big-file downloads were causing random problems - removed outgoing.clear from _KHTTPClient.write as it was already in _KHTTPClient.close
                added /kweb/ip URI
   16 DEC 2013: modified _parseHeader to check content-length before parsebody tests "if (clen > 0) and self.PARSEBODY:"
@@ -258,7 +264,7 @@ except:
 # GLOBAL CONSTANTS
 # ##################################################################################################
 _KWEB_VERSION = 9
-_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.DEC.17 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
+_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.DEC.25 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
 
 #common mime-types - add/edit as required
 _KEXTENSIONS_MAP = mimetypes.types_map.copy()
@@ -2957,18 +2963,18 @@ class _kweb(object):
       el = ['<label for="%s">%s</label><select name="%s" id="%s">'%(name, label, name, name)]
     else:
       el = ['<select name="%s">'%(name)]
-    if (type(items[0]) == type(())):
-      for i in items:
-        if i[0] == value:
-          el.append('<option value="%s" selected>%s</option>' % (i[0], i[1]))
-        else:
-          el.append('<option value="%s">%s</option>' % (i[0], i[1]))
-    else:
-      for i in items:
-        if i == value:
-          el.append('<option selected>%s</option>' % (i))
-        else:
-          el.append('<option>%s</option>' % (i))
+    for i in items.split(','):
+      i = i.strip()
+      if not i: continue
+      kv = filter(None, [j.strip() for j in i.split('=',1)])
+      ovalue = ''
+      selected = ''
+      if len(kv) == 2:
+        ovalue = ' value="%s"'%kv[1]
+        if kv[1] == value: selected = ' selected'
+      else:
+        if kv[0] == value: selected = ' selected'
+      el.append('<option%s%s>%s</option>' % (ovalue, selected, kv[0]))
     el.append('</select>')
     return ''.join(el)
 
@@ -2978,16 +2984,14 @@ class _kweb(object):
       a = ['<fieldset id="%s"><legend>%s</legend>'%(name, label)]
     else:
       a = ['<fieldset>']
-    if (type(items[0]) == type(())):
-      for i in items:
-        if i[0] == value: c = 'checked'
-        else: c = ''
-        a.append('<input type=radio name="%s" id="%s-%s" value="%s" %s/><label for="%s-%s">%s</label>' % (name, name, i[0], i[0], c, name, i[0], i[1]))
-    else:
-      for i in items:
-        if i == value: c = 'checked'
-        else: c = ''
-        a.append('<input type=radio name="%s" id="%s-%s" value="%s" %s/><label for="%s-%s">%s</label>' % (name, name, i, i, c, name, i, i))
+    for i in items.split(','):
+      i = i.strip()
+      if not i: continue
+      kv = filter(None, [j.strip() for j in i.split('=',1)])
+      if len(kv) != 2: kv.append(kv[0])
+      if kv[1] == value: c = ' checked'
+      else: c = ''
+      a.append('<input type=radio name="%s" id="%s-%s" value="%s"%s/><label for="%s-%s">%s</label>' % (name, name, kv[1], kv[1], c, name, kv[1], kv[0]))
     a.append('</fieldset>')
     return ''.join(a)
 
@@ -3011,11 +3015,6 @@ class _kweb(object):
           fa = ln.split(':',1)
         else:
           fa = [f.strip() for f in ln.split(':',4)]
-          if 5 == len(fa):
-            if (6 == c1) or (7 == c1):
-              args = tuple([f.strip() for f in fa[4].split(',')])
-              if (len(args[0].split(' ',1)) > 1):
-                fa[4] = tuple([tuple(i.split(' ',1)) for i in args])
         fa[0] = c1
         if r:
           r[-1].append(tuple(fa))
