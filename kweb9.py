@@ -185,6 +185,7 @@ notes:
 history:
   07 JAN 2014: renamed KeyValueFile and Txtbl to enable use by import
                fixed bug in Txtbl.__init__ headerline should be column
+               fixed bug in Txtbl.selectrows value of kvargs must be string for match to work
   05 JAN 2014: added args to html_input
                added .md and .dsv to mimetypes
   25 DEC 2013: modified format of field-set from "value name" to "name=value"
@@ -2959,11 +2960,11 @@ class Txtbl(object):
       if self.columns is None:
         #access columns as a, b, c, ...
         i = ord(k[0])-97
-        if 0 <= i < ncols: cvlist.append((i,v))
+        if 0 <= i < ncols: cvlist.append((i,str(v)))
       else:
         try: i = self.columns.index(k)
         except ValueError: continue
-        cvlist.append((i,v))
+        cvlist.append((i,str(v)))
     if not cvlist: return
     for i,row in enumerate(self.rows):
       match = True
