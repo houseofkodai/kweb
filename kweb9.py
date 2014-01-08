@@ -183,6 +183,10 @@ notes:
     list(set(i[4][0] for i in socket.getaddrinfo(socket.gethostname(), None)))
 
 history:
+  07 JAN 2014: renamed KeyValueFile and Txtbl to enable use by import
+               fixed bug in Txtbl.__init__ headerline should be column
+  05 JAN 2014: added args to html_input
+               added .md and .dsv to mimetypes
   25 DEC 2013: modified format of field-set from "value name" to "name=value"
                changed load_form, html_select, html_radio_list
   17 DEC 2013: big-file downloads were causing random problems - removed outgoing.clear from _KHTTPClient.write as it was already in _KHTTPClient.close
@@ -264,7 +268,7 @@ except:
 # GLOBAL CONSTANTS
 # ##################################################################################################
 _KWEB_VERSION = 9
-_KWEB_SERVER_VERSION = 'Server: kweb/%d/2013.DEC.25 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
+_KWEB_SERVER_VERSION = 'Server: kweb/%d/2014.JAN.07 github.com/houseofkodai/kweb Python/%s' % (_KWEB_VERSION, sys.version.split()[0])
 
 #common mime-types - add/edit as required
 _KEXTENSIONS_MAP = mimetypes.types_map.copy()
@@ -275,6 +279,8 @@ _KEXTENSIONS_MAP.update({
   '.log': 'text/plain',
   '.ini': 'text/plain',
   '.kweb': 'text/plain',
+  '.md': 'text/plain',
+  '.dsv': 'text/plain',
   })
 
 # common codes - NOT comprehensive; edit/add as required
@@ -982,6 +988,265 @@ _KRESOURCES = {
  '\xbe\x80\x97\nUh\x1f\xe14:V\xe8\xc7\xef~\x0b\xef?\xaa\xd3\x94'
  "\xf0y\xd7xs\xb1'\xea\xe9\x8d\xf8\xdf&[+C\xa9\xffm}\xfe"
  '\x9d\xfa\x85\x02X\xfc\x1f\x9f\xea\x88,')),
+'/kweb.js': ('application/javascript', '''\
+/*!
+
+  2013 DEC 25 Karthik Ayyar <karthik@houseofkodai.in>
+
+  usage:
+    * include script in head and instanstiate in end of body
+
+  description:
+    minimal self-contained javascript AMD module
+
+  notes:
+    *
+
+  version:
+    1.0
+
+  license: MIT license
+ */
+
+if (typeof(String.prototype.trim) === "undefined") {
+  String.prototype.trim = function() {
+    return String(this).replace(/^\s+|\s+$/g, '');
+  };
+}
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define(factory);
+  } else {
+    root.kweb = factory();
+  }
+}(this, function () {
+  return {
+
+strsplit: function(str, separator, limit) {
+  var str = str.split(separator);
+  if (str.length <= limit) return str;
+  var ret = str.splice(0, limit);
+  ret.push(str.join(separator));
+  return ret;
+},
+
+isarray: function(obj) {
+  return Object.prototype.toString.call(obj) === '[object Array]';
+},
+
+strsize: function(n) {
+  //human-readable size in bytes (B), Kilobytes (KB), Megabytes (MB), and Gigabytes (GB)
+  if (0 == n) return '0';
+  var b = [[1073741824, 'GB'], [1048576, 'MB'], [1024, 'KB']];
+  for (var i=0; i<b.length; i++)
+    if (n >= b[i][0]) return (n/b[i][0]).toFixed(2)+' '+b[i][1];
+  return n+' B';
+},
+
+uniqueid: function(idlen) {
+  var idlen = typeof idlen !== 'undefined' ? idlen : 7;
+  var a = 'abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  var s = '';
+  while (s.length < idlen) {
+    i = Math.round(Math.random()*100);
+    if (i < a.length) s += a[i];
+  };
+  return s;
+},
+
+html_input: function(name, typ, value, label, args) {
+  var name = typeof name !== 'undefined' ? name : 'html_input';
+  var args = typeof args !== 'undefined' ? args : '';
+  var el = '<input name="'+name+'"';
+  if (typeof label !== 'undefined')
+    el = '<label for="'+name+'">'+label+'</label>'+el+' id="'+name+'"';
+  if (typeof typ !== 'undefined') el += ' type="'+typ+'"';
+  if (typeof value !== 'undefined') {
+    if ('checkbox' == typ) {
+      el += ' checked';
+    } else {
+      el += ' value="'+value+'"';
+    }
+  }
+  return el + args + ' />'
+},
+
+html_textarea: function(name, value, label, args) {
+  var name = typeof name !== 'undefined' ? name : 'html_textarea';
+  var args = typeof args !== 'undefined' ? args : '';
+  if (typeof label !== 'undefined') {
+    var el = '<label for="'+name+'">'+label+'</label><textarea name="'+name+'" id="'+name+'" '+args+'>';
+  } else {
+    var el = '<textarea name="'+name+'" '+args+'>';
+  }
+  if (typeof value !== 'undefined')
+    el += value;
+  return el + '</textarea>';
+},
+
+html_select: function(name, value, label, items) {
+  if (typeof items === 'undefined') return '';
+  var items = items.split(',');
+  var name = typeof name !== 'undefined' ? name : 'html_select';
+  if (typeof label !== 'undefined') {
+    var el = '<label for="'+name+'">'+label+'</label><select name="'+name+'" id="'+name+'">';
+  } else {
+    var el = '<select name="'+name+'">';
+  }
+  for (var i=0; i<items.length; i++) {
+    var s = items[i].trim();
+    if (s.length == 0) continue;
+    var kv = this.strsplit(s, '=', 1);
+    var selected = '';
+    var svalue = '';
+    if (kv.length == 2) {
+      svalue = kv[1].trim();
+      if (svalue.length > 0) {
+        if (svalue == value) selected = ' selected';
+        svalue = ' value="'+svalue+'"';
+      }
+    } else {
+      if (kv[0] == value) selected = ' selected';
+    }
+    el += '<option'+svalue+selected+'>'+kv[0]+'</option>';
+  }
+  return el + '</select>';
+},
+
+html_radio_list: function(name, value, label, items) {
+  if (typeof items === 'undefined') return '';
+  var items = items.split(',');
+  var name = typeof name !== 'undefined' ? name : 'html_radio_list';
+  if (typeof label !== 'undefined') {
+    var el = '<fieldset id="'+name+'"><legend>'+label+'</legend>';
+  } else {
+    var el = '<fieldset>';
+  }
+  for (var i=0; i<items.length; i++) {
+    var s = items[i].trim();
+    if (s.length == 0) continue;
+    var kv = this.strsplit(s, '=', 2);
+    var ivalue = kv[0];
+    if (kv.length > 1) ivalue = kv[1];
+    var c = '';
+    if (ivalue == value) c = 'checked';
+    el += '<input type=radio name="'+name+'" id="'+name+'-'+ivalue+'" value="'+ivalue+'" '+c+'/><label for="'+name+'-'+ivalue+'">'+kv[0]+'</label>';
+  }
+  return el + '</fieldset>';
+},
+
+parse_fieldsets: function(fdata) {
+  var a = [];
+  if (typeof fdata !== 'string') return a;
+  var flines = fdata.split('\\n');
+  for (var i=0; i<flines.length; i++) {
+    var ln = flines[i].trim();
+    if (ln.length < 1) continue;
+    var c1 = ln[0];
+    if (c1 === '#') continue;
+    if ((c1 >= '0') && (c1 <= '9')) {
+      c1 = parseInt(c1);
+      if (0 === c1)
+        var fa = this.strsplit(ln, ':', 1)
+      else
+        var fa = this.strsplit(ln, ':', 4);
+      fa[0] = c1;
+      if (a.length > 0)
+        a[a.length-1].push(fa)
+      else
+        a.push([fa]);
+    } else {
+      if ('_' === ln) a.push([''])
+      else a.push([ln])
+    }
+  };
+  return a;
+},
+
+html_fieldset: function(legend, fields, fvalues, ferrors) {
+  var fields = typeof fields !== 'undefined' ? fields : [];
+  var fvalues = typeof fvalues !== 'undefined' ? fvalues : {};
+  var ferrors = typeof ferrors !== 'undefined' ? ferrors : {};
+  var s = '';
+  if ((typeof legend === 'string') && (legend.length > 0))
+    s = '<fieldset><legend>'+legend+'</legend>'
+  for (var i=0; i<fields.length; i++) {
+    var f = fields[i];
+    var nf = f.length;
+    if (nf < 2) continue;
+    var ft = f[0];
+    var fn = f[2];
+    var fv = fvalues[fn] || f[1];
+    var f3 = (nf > 3) ? f[3] : '';
+    var f4 = (nf > 4) ? f[4] : '';
+    var ferr = ferrors[fn] || '';
+    switch(ft) {
+      case 0:
+        s += f[1];
+        break;
+      case 1:
+        s += this.html_input(fn, '', fv, f3, f4);
+        break;
+      case 2:
+        s += this.html_input(fn, 'submit', fv, f3, f4);
+        break;
+      case 3:
+        s += this.html_input(fn, 'password', fv, f3, f4);
+        break;
+      case 4:
+        s += this.html_input(fn, 'checkbox', fv, f3, f4);
+        break;
+      case 5:
+        s += this.html_input(fn, 'file', fv, f3, f4);
+        break;
+      case 6:
+        s += this.html_radio_list(fn, fv, f3, f4);
+        break;
+      case 7:
+        s += this.html_select(fn, fv, f3, f4);
+        break;
+      case 8:
+        s += this.html_textarea(fn, fv, f3, f4);
+        break;
+    };
+    if (ferr.length > 0) s += ferr;
+  };
+  if ((typeof legend === 'string') && (legend.length > 0))
+    s += '</fieldset>';
+  return s;
+},
+
+html_form: function(action, fieldsets, fieldvalues, fielderrors, method, enctype, attrs) {
+  action = typeof action !== 'undefined' ? action : '';
+  if (typeof fieldsets === 'string')
+    fieldsets = this.parse_fieldsets(fieldsets)
+  else return '';
+  fieldvalues = typeof fieldvalues !== 'undefined' ? fieldvalues : {};
+  fielderrors = typeof fielderrors !== 'undefined' ? fielderrors : {};
+  method = typeof method !== 'undefined' ? method : '';
+  enctype = typeof enctype !== 'undefined' ? enctype : '';
+  attrs = typeof attrs !== 'undefined' ? attrs : '';
+
+  var s = '<form';
+  if (action.length > 0) s += ' action="'+action+'"';
+  if (method.length > 0) s += ' method="'+method+'"';
+  if (enctype.length > 0) s += ' enctype="'+enctype+'"';
+  if (attrs.length > 0) s += attrs;
+  s += '>';
+  for (var i=0; i<fieldsets.length; i++) {
+    var fs = fieldsets[i];
+    if (typeof fs[0] === 'string')
+      s += this.html_fieldset(fs[0], fs.splice(1), fieldvalues, fielderrors)
+    else
+      s += this.html_fieldset('', fs, fieldvalues, fielderrors);
+  };
+  return s + '</form>';
+},
+
+};
+}));
+'''),
 '/kweb.css': ('text/css', '''\
 * {margin:0;}
 html, body {height:100%;}
@@ -998,6 +1263,14 @@ footer {background-color:#f0f0f0; font-size:smaller;}
  height: 100%;
  margin: 0px 0px -3.8em 0px;
 }
+h1, h2, h3, h4, h5, h6 {
+ font-weight: 300;
+ font-style: normal;
+ line-height: 1.4em;
+ margin-top: 1.2em;
+}
+input[type="radio"] {margin:.25em;}
+label {margin-right:.75em;}
 .content {
  font-family: "Open Sans", "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif;
  padding: 1em 1em 3.8em 1em;
@@ -1005,12 +1278,6 @@ footer {background-color:#f0f0f0; font-size:smaller;}
  text-align:left;
  margin: auto;
  line-height: 1.8em;
-}
-h1, h2, h3, h4, h5, h6 {
- font-weight: 300;
- font-style: normal;
- line-height: 1.4em;
- margin-top: 1.2em;
 }
 .content > p,ul,ol,dl,h1,h2,h3,h4,h5,h6,pre,blockquote {
  padding-top: .5em;
@@ -2351,7 +2618,7 @@ def _kimport(fqname):
   if not hasattr(fmodule, 'NOCACHE'): _KIMPORT_CACHE[fqname] = (ft, fmodule)
   return (None, fmodule)
 
-class _KeyValueFile(object):
+class KeyValueFile(object):
   '''
   key:value file
   AUTHOR:
@@ -2521,7 +2788,7 @@ class _KeyValueFile(object):
     if saveonset: self.save(self.keepold)
     return True
 
-class _Ktxtbl(object):
+class Txtbl(object):
   '''
   AUTHOR:
     Karthik@houseofkodai.in
@@ -2547,7 +2814,7 @@ class _Ktxtbl(object):
     self.filename = filename
     self.delimiter = delimiter
     if columns:
-      self.columns = tuple(headerline.split(self.delimiter))
+      self.columns = tuple(columns.split(self.delimiter))
     else:
       self.columns = None
     self.rows = []
@@ -2789,8 +3056,8 @@ class _kweb(object):
   holder class for common methods
   '''
   def __init__ (self):
-    self.KeyValueFile = _KeyValueFile
-    self.Txtbl = _Ktxtbl
+    self.KeyValueFile = KeyValueFile
+    self.Txtbl = Txtbl
 
   def txpand(self, formatstr, d, marker='"'):
     '''
@@ -2934,7 +3201,7 @@ class _kweb(object):
       i += 1
     return local, emailid[len(local)+1:]
 
-  def html_input(self, name='html_input', typ=None, value=None, label=None):
+  def html_input(self, name='html_input', typ=None, value=None, label=None, args=''):
     if label:
       el = ['<label for="%s">%s</label><input name="%s" id="%s"'%(name, label, name, name)]
     else:
@@ -2945,7 +3212,7 @@ class _kweb(object):
         el.append(' checked')
       else:
         el.append(' value="%s"'%value)
-    el.append(' />')
+    el.append('%s />'%args)
     return ''.join(el)
 
   def html_textarea(self, name='html_textarea', value=None, label=None, args=''):
@@ -3074,33 +3341,34 @@ class _kweb(object):
         if 0 != ft:
           fn = f[2]
           fv = fieldvalues.get(fn, f[1])
-          f3 = (f[3] if (nf>3) else None)
+          f3 = f[3] if (nf>3) else None
+          f4 = f[4] if (nf>4) else ''
           ferr = fielderrors.get(fn)
         if 0 == ft:
           a.append(f[1])
         elif 1 == ft:
-          a.append(self.html_input(fn, None, fv, f3))
+          a.append(self.html_input(fn, None, fv, f3, f4))
         elif 2 == ft:
-          a.append(self.html_input(fn, 'submit', fv, f3))
+          a.append(self.html_input(fn, 'submit', fv, f3, f4))
         elif 3 == ft:
-          a.append(self.html_input(fn, 'password', fv, f3))
+          a.append(self.html_input(fn, 'password', fv, f3, f4))
         elif 4 == ft:
-          a.append(self.html_input(fn, 'checkbox', fv, f3))
+          a.append(self.html_input(fn, 'checkbox', fv, f3, f4))
         elif 5 == ft:
-          a.append(self.html_input(fn, 'file', fv, f3))
+          a.append(self.html_input(fn, 'file', fv, f3, f4))
         elif 6 == ft:
-          a.append(self.html_radio_list(fn, fv, f3, (f[4] if (nf>4) else ())))
+          a.append(self.html_radio_list(fn, fv, f3, f4))
         elif 7 == ft:
-          a.append(self.html_select(fn, fv, f3, (f[4] if (nf>4) else ())))
+          a.append(self.html_select(fn, fv, f3, f4))
         elif 8 == ft:
-          a.append(self.html_textarea(fn, fv, f3, (f[4] if (nf>4) else '')))
+          a.append(self.html_textarea(fn, fv, f3, f4))
         if ferr is not None: a.append(ferr)
       if legend: a.append('</fieldset>')
       return ''.join(a)
     a = ['<form']
     if action: a.append(' action="%s"'%action)
     if method: a.append(' method="%s"'%method)
-    if enctype: a.append(' enctype="%s"'%method)
+    if enctype: a.append(' enctype="%s"'%enctype)
     if attrs: a.append(attrs)
     a.append('>')
     strtype = type('')
